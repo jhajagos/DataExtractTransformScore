@@ -29,10 +29,27 @@ def schema_define(meta):
                                       Column("id", Integer, primary_key=True),
                                       Column("step_number", Integer),
                                       Column("name", String(255)),
-                                      Column("parameters", JSONB),
-                                      Column("description", Text),
                                       Column("data_transformation_step_class_id",
-                                             ForeignKey("data_transformation_step_classes.id"), nullable=True))
+                                             ForeignKey("data_transformation_step_classes.id")),
+                                      Column("parameters", JSONB),
+                                      Column("description", Text))
+
+    data_transformation_step_jobs = Table("data_transformation_step_jobs", meta,
+                                          Column("id", Integer, primary_key=True),
+                                          Column("job_id", ForeignKey("jobs.id"), nullable=False),
+                                          Column("data_transformation_step_id",
+                                                 ForeignKey("data_transformation_steps.id"),
+                                                 nullable=False),
+                                          Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False),
+                                          Column("start_date_time", DateTime),
+                                          Column("end_date_time", DateTime))
+
+    data_transformation_step_relationships = Table("data_transformation_step_relationships", meta,
+                                                   Column("id", Integer, primary_key=True),
+                                                   Column("parent_data_transformation_step_id",
+                                                          ForeignKey("data_transformation_steps.id"), nullable=False),
+                                                   Column("child_data_transformation_step_id",
+                                                          ForeignKey("data_transformation_steps.id"), nullable=False))
 
     data_transformations = Table("data_transformations", meta,
                                  Column("id", Integer, primary_key=True),
@@ -56,6 +73,7 @@ def create_and_populate_schema(meta):
     meta = schema_define(meta)
     meta.drop_all()
     meta.create_all(checkfirst=True)
+
     return meta
 
 
@@ -64,16 +82,20 @@ def main():
         config = json.load(f)
 
     connection_uri = config["connection_uri"]
-    if "db_schema" in connection_uri:
+    if "db_schema" in config:
         db_schema = config["db_schema"]
     else:
         db_schema = None
+
+    print(db_schema)
 
     engine = create_engine(connection_uri)
     connection = engine.connect()
     meta_data = MetaData(connection, schema=db_schema)
 
     meta_data = create_and_populate_schema(meta_data)
+
+    print(meta_data.tables.keys())
 
 
 if __name__ == "__main__":
