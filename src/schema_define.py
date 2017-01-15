@@ -22,8 +22,11 @@ def schema_define(meta):
                  Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False))
 
     data_transformation_step_classes = Table("data_transformation_step_classes", meta,
-                                              Column("id", Integer, primary_key=True),
-                                              Column("name", String(255), nullable=False, unique=True))
+                                             Column("id", Integer, primary_key=True),
+                                             Column("name", String(255), nullable=False, unique=True),
+                                             Column("parent_data_transformation_step_class_id",
+                                                    ForeignKey("data_transformation_step_classes.id"), nullable=True)
+                                             )
 
     data_transformation_steps = Table("data_transformation_steps", meta,
                                       Column("id", Integer, primary_key=True),
@@ -69,12 +72,34 @@ def schema_define(meta):
     return meta
 
 
-def create_and_populate_schema(meta):
+def get_table_names_without_schema(meta):
+    table_dict = {}
+    for full_table_name in meta.tables:
+        if meta.schema is not None:
+            schema, table_name = full_table_name.split(".")
+            table_dict[table_name] = full_table_name
+        else:
+            table_dict[full_table_name] = full_table_name
+    return table_dict
+
+
+def populate_reference_table(table_name, meta, connection, list_of_values):
+    table_obj = meta.tables[table_name]
+
+    for tuple_value in list_of_values:
+        connection.execute(table_obj.insert(tuple_value))
+
+
+def create_and_populate_schema(meta, connection):
     meta = schema_define(meta)
     meta.drop_all()
     meta.create_all(checkfirst=True)
 
-    return meta
+    table_dict = get_table_names_without_schema(meta)
+    job_statuses = [(1, "Started"), (2, "Finished"), (3, "Not started")]
+    populate_reference_table(table_dict["job_statuses"], meta, connection, job_statuses)
+
+    return meta, table_dict
 
 
 def main():
@@ -93,9 +118,10 @@ def main():
     connection = engine.connect()
     meta_data = MetaData(connection, schema=db_schema)
 
-    meta_data = create_and_populate_schema(meta_data)
+    meta_data, table_dict = create_and_populate_schema(meta_data, connection)
 
     print(meta_data.tables.keys())
+
 
 
 if __name__ == "__main__":
