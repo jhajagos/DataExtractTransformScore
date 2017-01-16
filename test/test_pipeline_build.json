@@ -1,0 +1,2 @@
+[{"step": 1, "data_transformation_class": "load_file",
+  "parameters": {"relative_file_path": "", "file_type": "csv", "delimiter": "\t", "common_id_field": "eid" }}]

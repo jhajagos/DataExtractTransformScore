@@ -99,6 +99,14 @@ def create_and_populate_schema(meta, connection):
     job_statuses = [(1, "Started"), (2, "Finished"), (3, "Not started")]
     populate_reference_table(table_dict["job_statuses"], meta, connection, job_statuses)
 
+    primary_data_transform_classes = [(1,"Load", None),(2, "Merge", None), (3, "Transform", None), (4, "Score", None)]
+    child_data_transform_child_classes_1 = [(10, "Load file", 1), (30, "Map JSON", 3), (40, "Custom class score", 4)]
+    child_data_transform_child_classes_2 = [(100, "Load file and coalesce", 10)]
+
+    data_transform_classes = primary_data_transform_classes + child_data_transform_child_classes_1 + child_data_transform_child_classes_2
+
+    populate_reference_table(table_dict["data_transformation_step_classes"], meta, connection, data_transform_classes)
+
     return meta, table_dict
 
 
@@ -112,8 +120,6 @@ def main():
     else:
         db_schema = None
 
-    print(db_schema)
-
     engine = create_engine(connection_uri)
     connection = engine.connect()
     meta_data = MetaData(connection, schema=db_schema)
@@ -121,7 +127,6 @@ def main():
     meta_data, table_dict = create_and_populate_schema(meta_data, connection)
 
     print(meta_data.tables.keys())
-
 
 
 if __name__ == "__main__":
