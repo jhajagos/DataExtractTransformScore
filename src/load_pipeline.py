@@ -14,10 +14,10 @@ class LoadPipeline(object):
 def main(config_json_file_name, pipeline_json_file_name):
 
     with open(config_json_file_name, "r") as f:
-          config = json.load(f)
+        config = json.load(f)
 
     with open(pipeline_json_file_name, "r") as f:
-          pipeline_structure = json.load(f)
+        pipeline_structure = json.load(f)
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
