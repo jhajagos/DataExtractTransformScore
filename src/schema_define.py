@@ -90,24 +90,31 @@ def populate_reference_table(table_name, meta, connection, list_of_values):
         connection.execute(table_obj.insert(tuple_value))
 
 
-def create_and_populate_schema(meta, connection):
-    meta = schema_define(meta)
-    meta.drop_all()
-    meta.create_all(checkfirst=True)
+def create_and_populate_schema(meta_data, connection):
+    meta_data = schema_define(meta_data)
+    meta_data.drop_all()
+    meta_data.create_all(checkfirst=True)
 
-    table_dict = get_table_names_without_schema(meta)
+    table_dict = get_table_names_without_schema(meta_data)
     job_statuses = [(1, "Started"), (2, "Finished"), (3, "Not started")]
-    populate_reference_table(table_dict["job_statuses"], meta, connection, job_statuses)
+    populate_reference_table(table_dict["job_statuses"], meta_data, connection, job_statuses)
 
-    primary_data_transform_classes = [(1,"Load", None),(2, "Merge", None), (3, "Transform", None), (4, "Score", None)]
-    child_data_transform_child_classes_1 = [(10, "Load file", 1), (30, "Map JSON", 3), (40, "Custom class score", 4)]
-    child_data_transform_child_classes_2 = [(100, "Load file and coalesce", 10)]
+    primary_data_transform_classes = [
+                                      (1,"Load", None),
+                                      (2, "Merge", None),
+                                      (3, "Coalesce"),
+                                      (4, "Transform", None),
+                                      (5, "Score", None),
+                                      (6, "Output", None)
+                                     ]
 
-    data_transform_classes = primary_data_transform_classes + child_data_transform_child_classes_1 + child_data_transform_child_classes_2
+    child_data_transform_child_classes_1 = [(10, "Load file", 1), (40, "Map JSON", 3), (50, "Custom class score", 4)]
 
-    populate_reference_table(table_dict["data_transformation_step_classes"], meta, connection, data_transform_classes)
+    data_transform_classes = primary_data_transform_classes + child_data_transform_child_classes_1
 
-    return meta, table_dict
+    populate_reference_table(table_dict["data_transformation_step_classes"], meta_data, connection, data_transform_classes)
+
+    return meta_data, table_dict
 
 
 def main():
