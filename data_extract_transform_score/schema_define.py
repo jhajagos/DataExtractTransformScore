@@ -72,12 +72,6 @@ def schema_define(meta_data):
                                         nullable=False),
                                  Column("pipeline_job_id", ForeignKey("pipeline_jobs.id"), nullable=False))
 
-    data_transformation_relationships = Table("data_transformation_relationships", meta_data,
-                                              Column("id", Integer, primary_key=True),
-                                              Column("parent_data_transformation_id",
-                                                     ForeignKey("data_transformations.id")),
-                                              Column("child_data_transformation_id",
-                                                     ForeignKey("data_transformations.id"), nullable=False))
     return meta_data
 
 
