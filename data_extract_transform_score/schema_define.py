@@ -1,39 +1,52 @@
-from sqlalchemy import Table, Column, Integer, Text, String, DateTime, ForeignKey, create_engine, MetaData
+from sqlalchemy import Table, Column, Integer, Text, String, DateTime, ForeignKey, create_engine, MetaData, Boolean
 from sqlalchemy.dialects.postgresql import JSONB
 import json
 
 
-def schema_define(meta):
+def schema_define(meta_data):
 
-    job_classes = Table("job_classes", meta,
+    job_classes = Table("job_classes", meta_data,
                         Column("id", Integer, primary_key=True),
                         Column("name", String(255), nullable=False, unique=True))
 
-    job_statuses = Table("job_statuses", meta,
+    job_statuses = Table("job_statuses", meta_data,
                          Column("id", Integer, primary_key=True),
                          Column("name", String(255), nullable=False, unique=True))
 
-    jobs = Table("jobs", meta,
+    jobs = Table("jobs", meta_data,
                  Column("id", Integer, primary_key=True),
                  Column("name", String(255), nullable=False),
                  Column("start_date_time", DateTime),
                  Column("end_date_time", DateTime),
                  Column("job_class_id", ForeignKey("job_classes.id"), nullable=False),
-                 Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False))
+                 Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False),
+                 Column("is_latest", Boolean)
+                 )
 
-    data_transformation_step_classes = Table("data_transformation_step_classes", meta,
+    data_transformation_step_classes = Table("data_transformation_step_classes", meta_data,
                                              Column("id", Integer, primary_key=True),
                                              Column("name", String(255), nullable=False, unique=True),
                                              Column("parent_data_transformation_step_class_id",
                                                     ForeignKey("data_transformation_step_classes.id"), nullable=True))
 
-    pipelines = Table("pipelines", meta,
+    pipelines = Table("pipelines", meta_data,
                       Column("id", Integer, primary_key=True),
                       Column("name", String(255), nullable=False, unique=True))
 
-    data_transformation_steps = Table("data_transformation_steps", meta,
+    pipeline_jobs = Table("pipeline_jobs", meta_data,
+                          Column("id", Integer, primary_key=True),
+                          Column("job_id", ForeignKey("jobs.id"), nullable=False),
+                          Column("pipeline_id",
+                                                 ForeignKey("pipelines.id"),
+                                                 nullable=False),
+                          Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False),
+                          Column("start_date_time", DateTime),
+                          Column("end_date_time", DateTime),
+                          Column("is_latest", Boolean))
+
+    data_transformation_steps = Table("data_transformation_steps", meta_data,
                                       Column("id", Integer, primary_key=True),
-                                      Column("step_number", Integer),
+                                      Column("step_number", Integer, nullable=False),
                                       Column("name", String(255)),
                                       Column("data_transformation_step_class_id",
                                              ForeignKey("data_transformation_step_classes.id")),
@@ -41,39 +54,31 @@ def schema_define(meta):
                                       Column("description", Text),
                                       Column("pipeline_id", ForeignKey("pipelines.id"), nullable=False))
 
-    data_transformation_step_jobs = Table("data_transformation_step_jobs", meta,
-                                          Column("id", Integer, primary_key=True),
-                                          Column("job_id", ForeignKey("jobs.id"), nullable=False),
-                                          Column("data_transformation_step_id",
-                                                 ForeignKey("data_transformation_steps.id"),
-                                                 nullable=False),
-                                          Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False),
-                                          Column("start_date_time", DateTime),
-                                          Column("end_date_time", DateTime))
+    pipeline_jobs_data_translation_steps = Table("pipeline_jobs_data_transformation_steps", meta_data,
+                                                 Column("id", Integer, primary_key=True),
+                                                 Column("pipeline_job_id", ForeignKey("pipeline_jobs.id"), nullable=False),
+                                                 Column("data_transformation_step_id", ForeignKey("data_transformation_steps.id")),
+                                                 Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False),
+                                                 Column("start_date_time", DateTime),
+                                                 Column("end_date_time", DateTime)
+                                                 )
 
-    data_transformation_step_relationships = Table("data_transformation_step_relationships", meta,
-                                                   Column("id", Integer, primary_key=True),
-                                                   Column("parent_data_transformation_step_id",
-                                                          ForeignKey("data_transformation_steps.id"), nullable=False),
-                                                   Column("child_data_transformation_step_id",
-                                                          ForeignKey("data_transformation_steps.id"), nullable=False))
-
-    data_transformations = Table("data_transformations", meta,
+    data_transformations = Table("data_transformations", meta_data,
                                  Column("id", Integer, primary_key=True),
                                  Column("data", JSONB),
                                  Column("meta", JSONB),
                                  Column("common_id", Integer),
                                  Column("data_transformation_step_id", ForeignKey("data_transformation_steps.id"),
                                         nullable=False),
-                                 Column("job_id", ForeignKey("jobs.id"), nullable=False))
+                                 Column("pipeline_job_id", ForeignKey("pipeline_jobs.id"), nullable=False))
 
-    data_transformation_relationships = Table("data_transformation_relationships", meta,
+    data_transformation_relationships = Table("data_transformation_relationships", meta_data,
                                               Column("id", Integer, primary_key=True),
                                               Column("parent_data_transformation_id",
                                                      ForeignKey("data_transformations.id")),
                                               Column("child_data_transformation_id",
                                                      ForeignKey("data_transformations.id"), nullable=False))
-    return meta
+    return meta_data
 
 
 def get_table_names_without_schema(meta):

@@ -1,2 +1,3 @@
-[{"step": 1, "data_transformation_class": "load_file",
+[{"step_number": 1, "data_transformation_class": "Load file", "name": "Load main file",
+  "description": "Load main file into initial data transformations",
   "parameters": {"relative_file_path": "", "file_type": "csv", "delimiter": "\t", "common_id_field": "eid" }}]
