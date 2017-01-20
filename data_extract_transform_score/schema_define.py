@@ -25,8 +25,11 @@ def schema_define(meta):
                                              Column("id", Integer, primary_key=True),
                                              Column("name", String(255), nullable=False, unique=True),
                                              Column("parent_data_transformation_step_class_id",
-                                                    ForeignKey("data_transformation_step_classes.id"), nullable=True)
-                                             )
+                                                    ForeignKey("data_transformation_step_classes.id"), nullable=True))
+
+    pipelines = Table("pipelines", meta,
+                      Column("id", Integer, primary_key=True),
+                      Column("name", String(255), nullable=False, unique=True))
 
     data_transformation_steps = Table("data_transformation_steps", meta,
                                       Column("id", Integer, primary_key=True),
@@ -35,7 +38,8 @@ def schema_define(meta):
                                       Column("data_transformation_step_class_id",
                                              ForeignKey("data_transformation_step_classes.id")),
                                       Column("parameters", JSONB),
-                                      Column("description", Text))
+                                      Column("description", Text),
+                                      Column("pipeline_id", ForeignKey("pipelines.id"), nullable=False))
 
     data_transformation_step_jobs = Table("data_transformation_step_jobs", meta,
                                           Column("id", Integer, primary_key=True),
@@ -108,7 +112,7 @@ def create_and_populate_schema(meta_data, connection):
                                       (6, "Output", None)
                                      ]
 
-    child_data_transform_child_classes_1 = [(10, "Load file", 1), (40, "Map JSON", 3), (50, "Custom class score", 4)]
+    child_data_transform_child_classes_1 = [(10, "Load file", 1), (40, "Map JSON", 4), (50, "Custom class score", 5)]
 
     data_transform_classes = primary_data_transform_classes + child_data_transform_child_classes_1
 

@@ -4,6 +4,7 @@ import schema_define
 import json
 import sqlalchemy as sa
 
+
 class TestLoadPipeline(unittest.TestCase):
     def setUp(self):
         with open("testing_config.json", "r") as f:
@@ -20,10 +21,10 @@ class TestLoadPipeline(unittest.TestCase):
         with open("./test_pipeline_build.json") as f:
             pipeline_struct = json.load(f)
 
-        pipeline_obj = pipeline.Pipeline(self.connection, self.meta_data, pipeline_struct)
-        pipeline_obj.load_into_db()
+        pipeline_obj = pipeline.Pipeline("test pipeline", self.connection, self.meta_data)
+        pipeline_obj.load_steps_into_db(pipeline_struct)
 
-        cursor = self.connection.execute("select * from testing.data_transformation_steps")
+        cursor = self.connection.execute("select * from testing.pipelines")
 
         list_of_data_trans_steps = list(cursor)
 
