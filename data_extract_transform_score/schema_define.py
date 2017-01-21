@@ -5,10 +5,6 @@ import json
 
 def schema_define(meta_data):
 
-    job_classes = Table("job_classes", meta_data,
-                        Column("id", Integer, primary_key=True),
-                        Column("name", String(255), nullable=False, unique=True))
-
     job_statuses = Table("job_statuses", meta_data,
                          Column("id", Integer, primary_key=True),
                          Column("name", String(255), nullable=False, unique=True))
@@ -18,7 +14,6 @@ def schema_define(meta_data):
                  Column("name", String(255), nullable=False),
                  Column("start_date_time", DateTime),
                  Column("end_date_time", DateTime),
-                 Column("job_class_id", ForeignKey("job_classes.id"), nullable=False),
                  Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False),
                  Column("is_latest", Boolean)
                  )
@@ -60,8 +55,7 @@ def schema_define(meta_data):
                                                  Column("data_transformation_step_id", ForeignKey("data_transformation_steps.id")),
                                                  Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False),
                                                  Column("start_date_time", DateTime),
-                                                 Column("end_date_time", DateTime)
-                                                 )
+                                                 Column("end_date_time", DateTime))
 
     data_transformations = Table("data_transformations", meta_data,
                                  Column("id", Integer, primary_key=True),

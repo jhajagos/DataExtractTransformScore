@@ -43,8 +43,7 @@ class TestLoadPipeline(unittest.TestCase):
         pipeline_obj = pipeline.Pipeline("test pipeline", self.connection, self.meta_data)
         pipeline_obj.load_steps_into_db(pipeline_struct)
 
-        jobs_obj = pipeline.Jobs(self.connection, self.meta_data)
-
+        jobs_obj = pipeline.Jobs("Test job", self.connection, self.meta_data)
         jobs_obj.create_jobs_to_run("test pipeline")
 
 

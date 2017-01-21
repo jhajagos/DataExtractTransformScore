@@ -4,7 +4,8 @@ in schema_define.py
 """
 
 import data_transformations as dt
-
+import time
+import datetime
 
 class DBClass(object):
     """Base Class for a PostgreSQL table in a schema"""
@@ -25,7 +26,8 @@ class DBClass(object):
         return ""
 
     def insert_struct(self, data_struct):
-        self.connection.execute(self.table_obj.insert(data_struct))
+        return self.connection.execute(self.table_obj.insert(data_struct).returning(self.table_obj.c.id)).fetchone()[0]
+
 
 
 class DataTransformationStep(DBClass):
@@ -137,13 +139,32 @@ class JobClass(DBClassName):
 
 
 class Jobs(object):
-    def __init__(self, connection, meta_data):
+    def __init__(self, name, connection, meta_data):
         self.connection = connection
         self.meta_data = meta_data
         self.job_id = None
+        self.pipelines = []
+        self.name = name
 
     def create_jobs_to_run(self, pipelines):
-        pass
+        if pipelines.__class__ == [].__class__:
+            self.pipelines = pipelines
+        else:
+            self.pipelines = [pipelines]
+
+        job_obj = Job(self.connection, self.meta_data)
+
+        not_start_obj = JobStatus("Not started", self.connection, self.meta_data)
+        job_dict = {"job_status_id": not_start_obj.get_id(),
+                    "name": self.name,
+                    "start_date_time": datetime.datetime.utcnow(),
+                    "is_latest": True
+                    }
+
+        job_id = job_obj.insert_struct(job_dict)
+
+
+
 
     def run_job(self):
         """Executes the job"""
