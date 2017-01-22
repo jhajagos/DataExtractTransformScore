@@ -37,5 +37,5 @@ class ServerServerDataTransformation(DataTransformation):
 
 
 class ReadFileIntoDB(ClientServerDataTransformation):
-    def __init__(self, file_name, file_type, delimiter):
+    def __init__(self, file_name, file_type, common_id_field_name, delimiter=","):
         pass

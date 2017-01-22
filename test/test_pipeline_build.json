@@ -1,8 +1,8 @@
 [
   {"step_number": 1, "data_transformation_class": "Load file", "name": "Load main file",
    "description": "Load main file into initial data transformations",
-   "parameters": {"file_name": "test_summary_file.csv", "file_type": "csv", "delimiter": "\t", "common_id_field": "eid" }},
+   "parameters": {"file_name": "test_summary_file.csv", "file_type": "csv", "delimiter": ",", "common_id_field_name": "eid" }},
   {"step_number": 2, "data_transformation_class": "Load file", "name": "Load main file",
-   "description": "Load main file into initial data transformations",
-   "parameters": {"file_name": "test_summary_dx_list.csv", "file_type": "csv", "delimiter": "\t", "common_id_field": "eid" }}
+   "description": "Load DX file into initial data transformations",
+   "parameters": {"file_name": "test_summary_dx_list.csv", "file_type": "csv", "delimiter": ",", "common_id_field_name": "eid" }}
 ]

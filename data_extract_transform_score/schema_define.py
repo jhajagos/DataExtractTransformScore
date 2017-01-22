@@ -37,7 +37,6 @@ def schema_define(meta_data):
                           Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False),
                           Column("start_date_time", DateTime),
                           Column("end_date_time", DateTime),
-                          Column("is_latest", Boolean),
                           Column("is_active", Boolean))
 
     data_transformation_steps = Table("data_transformation_steps", meta_data,
@@ -50,7 +49,7 @@ def schema_define(meta_data):
                                       Column("description", Text),
                                       Column("pipeline_id", ForeignKey("pipelines.id"), nullable=False))
 
-    pipeline_jobs_data_translation_steps = Table("pipeline_jobs_data_transformation_steps", meta_data,
+    pipeline_jobs_data_transformation_steps = Table("pipeline_jobs_data_transformation_steps", meta_data,
                                                  Column("id", Integer, primary_key=True),
                                                  Column("pipeline_job_id", ForeignKey("pipeline_jobs.id"), nullable=False),
                                                  Column("data_transformation_step_id", ForeignKey("data_transformation_steps.id")),

@@ -108,8 +108,19 @@ class DataTransformationStepClasses(object):
     def __init__(self):
         self.step_class_callable_obj_dict = {}
 
+        self._register("Load file", dt.ReadFileIntoDB)
+
     def _register(self, data_transformation_step_class_name, class_obj):
         self.step_class_callable_obj_dict[data_transformation_step_class_name] = class_obj
+
+    def get_by_class_name(self, class_name):
+
+        if class_name in self.step_class_callable_obj_dict:
+            return self.step_class_callable_obj_dict[class_name]
+        else:
+            return None
+
+
 
 
 class Pipeline(DBClassName):
@@ -186,6 +197,8 @@ class Jobs(object):
         self.pipeline_jobs_ids = []
         self.name = name
 
+        self.data_trans_step_classes_obj = DataTransformationStepClasses()
+
     def create_jobs_to_run(self, pipelines):
 
         # TODO: Get last job
@@ -215,7 +228,6 @@ class Jobs(object):
                                  "start_date_time": datetime.datetime.utcnow(), "is_active": True}
 
             pipeline_job_obj.insert_struct(pipeline_obj_dict)
-
 
     def run_job(self):
         """Executes the job"""
@@ -250,18 +262,32 @@ class Jobs(object):
 
                 pipeline_job_data_transformation_step_id = pipeline_job_data_trans_obj.insert_struct(pipeline_job_data_trans_step_dict)
 
+                # Run method registered for data step class
+
                 parameters = data_transform_step.parameters
                 dt_step_class_item = data_transformation_step_class_obj.find_by_id(data_transform_step.data_transformation_step_class_id)
 
-                print(dt_step_class_item)
-                print(parameters)
-                raise
+                data_step_class_name = dt_step_class_item.name
 
-                # Run method registered for data step class
+                data_step_class = self.data_trans_step_classes_obj.get_by_class_name(data_step_class_name)
+                data_step_class_obj = data_step_class(**parameters) # Call with parameters from function
+                data_step_class_obj._set_connection_and_meta_data(self.connection, self.meta_data) # Set DB connection
 
-                print(pipeline_job_data_transformation_step_id)
-                # Check which data transform step obj will run
+                data_step_class_obj.run()
 
+                # Update job information associated with completion
 
+                pipeline_job_data_trans_obj.update_struct(pipeline_job_data_transformation_step_id,
+                                                          {"end_date_time": datetime.datetime.utcnow(),
+                                                           "job_status_id":  finished_obj.get_id(),
+                                                           "is_active": False})
 
+            pipeline_job_obj.update_struct(pjd_row_obj.id, {"end_date_time": datetime.datetime.utcnow(),
+                                                            "job_status_id":  finished_obj.get_id(),
+                                                            "is_active": False})
 
+        self.job_obj.update_struct(self.job_id, {"end_date_time": datetime.datetime.utcnow(),
+                                                 "job_status_id":  finished_obj.get_id(),
+                                                  "is_active": False,
+                                                  "is_latest": True
+                                                 })
