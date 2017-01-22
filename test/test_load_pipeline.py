@@ -35,7 +35,7 @@ class TestLoadPipeline(unittest.TestCase):
 
         self.assertTrue(len(list_of_data_trans_steps))
 
-    def test_create_job(self):
+    def test_create_and_run_jobs(self):
 
         with open("./test_pipeline_build.json") as f:
             pipeline_struct = json.load(f)
@@ -45,6 +45,10 @@ class TestLoadPipeline(unittest.TestCase):
 
         jobs_obj = pipeline.Jobs("Test job", self.connection, self.meta_data)
         jobs_obj.create_jobs_to_run("test pipeline")
+
+        jobs_obj.run_job()
+
+        #self.assertTrue(False)
 
 
 if __name__ == '__main__':

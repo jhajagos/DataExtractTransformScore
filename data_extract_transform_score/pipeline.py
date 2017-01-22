@@ -28,11 +28,23 @@ class DBClass(object):
     def insert_struct(self, data_struct):
         return self.connection.execute(self.table_obj.insert(data_struct).returning(self.table_obj.c.id)).fetchone()[0]
 
+    def update_struct(self, row_id, update_dict):
+        sql_expr = self.table_obj.update().where(self.table_obj.c.id == row_id).values(update_dict)
+        self.connection.execute(sql_expr)
 
+    def find_by_id(self, row_id):
+        sql_expr = self.table_obj.select().where(self.table_obj.c.id == row_id)
+        connection = self.connection.execute(sql_expr)
+        return list(connection)[0]
 
 class DataTransformationStep(DBClass):
     def _table_name(self):
         return "data_transformation_steps"
+
+    def find_by_pipeline_id(self, pipeline_id):
+        sql_expr = self.table_obj.select().where(self.table_obj.c.pipeline_id == pipeline_id)
+        cursor = self.connection.execute(sql_expr)
+        return list(cursor)
 
 
 class DBClassName(DBClass):
@@ -74,10 +86,20 @@ class DBClassName(DBClass):
         self.connection.execute(self.table_obj.insert({"name": name}))
 
 
+class DataTransformationStepClassDB(DBClass):
+    def _table_name(self):
+        return "data_transformation_step_classes"
+
+
 class DataTransformationStepClass(DBClassName):
     """Class Representing the classes for data transformations"""
     def _table_name(self):
         return "data_transformation_step_classes"
+
+    def get_datasteps_by_pipeline_id(self, pipeline_id):
+        sql_expr = self.table_obj.select.where(self.table_obj.c.pipeline_id == pipeline_id)
+        cursor = self.connection.execute(sql_expr)
+        return list(cursor)
 
 
 class DataTransformationStepClasses(object):
@@ -116,7 +138,6 @@ class Pipeline(DBClassName):
 
         data_transformation_steps_obj = DataTransformationStep(self.connection, self.meta_data)
         for data_step_dict in self.raw_db_pipeline_structure:
-            print(data_step_dict)
             data_transformation_steps_obj.insert_struct(data_step_dict)
 
     def _table_name(self):
@@ -138,39 +159,109 @@ class JobClass(DBClassName):
         return "job_classes"
 
 
+class PipelineJob(DBClass):
+    def _table_name(self):
+        return "pipeline_jobs"
+    def find_by_job_id_and_pipeline_id(self, job_id, pipeline_id):
+        sql_expr = self.table_obj.select().where(self.table_obj.c.pipeline_id == pipeline_id
+                                                 and self.table_obj.c.job_id == job_id)
+
+        cursor = self.connection.execute(sql_expr)
+        return list(cursor)[0]
+
+class PipelineJobDataTranformationStep(DBClass):
+    def _table_name(self):
+        return "pipeline_jobs_data_transformation_steps"
+
+
 class Jobs(object):
+    """Class for running and executing jobs"""
+
     def __init__(self, name, connection, meta_data):
         self.connection = connection
         self.meta_data = meta_data
         self.job_id = None
+        self.job_obj =None
         self.pipelines = []
+        self.pipeline_jobs_ids = []
         self.name = name
 
     def create_jobs_to_run(self, pipelines):
+
+        # TODO: Get last job
+
         if pipelines.__class__ == [].__class__:
             self.pipelines = pipelines
         else:
             self.pipelines = [pipelines]
 
-        job_obj = Job(self.connection, self.meta_data)
+        self.job_obj = Job(self.connection, self.meta_data)
 
         not_start_obj = JobStatus("Not started", self.connection, self.meta_data)
         job_dict = {"job_status_id": not_start_obj.get_id(),
                     "name": self.name,
                     "start_date_time": datetime.datetime.utcnow(),
-                    "is_latest": True
+                    "is_active": True
                     }
 
-        job_id = job_obj.insert_struct(job_dict)
+        self.job_id = self.job_obj.insert_struct(job_dict)
 
+        pipeline_job_obj = PipelineJob(self.connection, self.meta_data)
+        for pipeline in self.pipelines:
+            pipeline_obj = Pipeline(pipeline, self.connection, self.meta_data)
+            pipeline_id = pipeline_obj.get_id()
 
+            pipeline_obj_dict = {"job_id": self.job_id, "pipeline_id": pipeline_id, "job_status_id": not_start_obj.get_id(),
+                                 "start_date_time": datetime.datetime.utcnow(), "is_active": True}
+
+            pipeline_job_obj.insert_struct(pipeline_obj_dict)
 
 
     def run_job(self):
         """Executes the job"""
-        pass
 
-    def _update_job(self):
-        pass
+        data_transformation_step_obj = DataTransformationStep(self.connection, self.meta_data)
+        data_transformation_step_class_obj = DataTransformationStepClassDB(self.connection, self.meta_data)
+
+        pipeline_job_data_trans_obj = PipelineJobDataTranformationStep(self.connection, self.meta_data)
+
+        start_obj = JobStatus("Started", self.connection, self.meta_data)
+        finished_obj = JobStatus("Finished", self.connection, self.meta_data)
+
+        pipeline_job_obj = PipelineJob(self.connection, self.meta_data)
+
+        for pipeline in self.pipelines:
+            pipeline_obj = Pipeline(pipeline, self.connection, self.meta_data)
+            pipeline_id = pipeline_obj.get_id()
+
+            pjd_row_obj = pipeline_job_obj.find_by_job_id_and_pipeline_id(self.job_id, pipeline_id)
+            pipeline_job_obj.update_struct(pjd_row_obj.id, {"job_status_id": start_obj.get_id()})
+            data_transform_step_objects = data_transformation_step_obj.find_by_pipeline_id(pipeline_id)
+
+            for data_transform_step in data_transform_step_objects:
+
+                pipeline_job_data_trans_step_dict = {"data_transformation_step_id": data_transform_step.id,
+                                                     "pipeline_job_id": pjd_row_obj.id,
+                                                     "job_status_id": start_obj.get_id(),
+                                                     "start_date_time": datetime.datetime.utcnow(),
+                                                     "is_active": True}
+
+                self.job_obj.update_struct(self.job_id, {"job_status_id": start_obj.get_id()})
+
+                pipeline_job_data_transformation_step_id = pipeline_job_data_trans_obj.insert_struct(pipeline_job_data_trans_step_dict)
+
+                parameters = data_transform_step.parameters
+                dt_step_class_item = data_transformation_step_class_obj.find_by_id(data_transform_step.data_transformation_step_class_id)
+
+                print(dt_step_class_item)
+                print(parameters)
+                raise
+
+                # Run method registered for data step class
+
+                print(pipeline_job_data_transformation_step_id)
+                # Check which data transform step obj will run
+
+
 
 

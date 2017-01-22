@@ -15,8 +15,8 @@ def schema_define(meta_data):
                  Column("start_date_time", DateTime),
                  Column("end_date_time", DateTime),
                  Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False),
-                 Column("is_latest", Boolean)
-                 )
+                 Column("is_latest", Boolean),
+                 Column("is_active", Boolean))
 
     data_transformation_step_classes = Table("data_transformation_step_classes", meta_data,
                                              Column("id", Integer, primary_key=True),
@@ -37,7 +37,8 @@ def schema_define(meta_data):
                           Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False),
                           Column("start_date_time", DateTime),
                           Column("end_date_time", DateTime),
-                          Column("is_latest", Boolean))
+                          Column("is_latest", Boolean),
+                          Column("is_active", Boolean))
 
     data_transformation_steps = Table("data_transformation_steps", meta_data,
                                       Column("id", Integer, primary_key=True),
@@ -55,7 +56,8 @@ def schema_define(meta_data):
                                                  Column("data_transformation_step_id", ForeignKey("data_transformation_steps.id")),
                                                  Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False),
                                                  Column("start_date_time", DateTime),
-                                                 Column("end_date_time", DateTime))
+                                                 Column("end_date_time", DateTime),
+                                                 Column("is_active", Boolean))
 
     data_transformations = Table("data_transformations", meta_data,
                                  Column("id", Integer, primary_key=True),
