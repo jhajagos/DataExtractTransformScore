@@ -1,5 +1,5 @@
 import csv
-from db_classes import PipelineJobDataTranformationStep, DataTransformationStep
+from db_classes import PipelineJobDataTranformationStep, DataTransformationStep, DataTransformationDB
 
 class DataTransformation(object):
     """Base class for representing a data transformation89jhuuu*/"""
@@ -17,15 +17,20 @@ class DataTransformation(object):
         self.pipeline_job_data_transformation_id = pipeline_job_data_transformation_id
         self.pipeline_job_data_transformation_obj = PipelineJobDataTranformationStep(self.connection, self.meta_data)
         self.pipeline_job_data_trans_row = self.pipeline_job_data_transformation_obj.find_by_id(self.pipeline_job_data_transformation_id)
+        self.pipeline_job_id = self.pipeline_job_data_trans_row.pipeline_job_id
         self.data_transformation_step_id = self.pipeline_job_data_trans_row.data_transformation_step_id
 
-        self.data_transformation_obj = DataTransformationStep(self.connection, self.meta_data)
-        self.data_transformation_row = self.data_transformation_obj.find_by_id(self.data_transformation_step_id)
+        self.data_transformation_obj = DataTransformationDB(self.connection, self.meta_data)
+        #self.data_transformation_step_row = self.data_transformation_obj.find_by_id(self.data_transformation_step_id)
 
 
 class ClientServerDataTransformation(DataTransformation):
     """Represents where the client reads into the DB server, e.g., reading a flat file"""
-    pass
+    def _write_data(self, data, common_id, meta=None):
+        dict_to_write = {"data": data, "common_id": common_id, "meta": meta}
+        dict_to_write["pipeline_job_id"] = self.pipeline_job_id
+        dict_to_write["data_transformation_step_id"] = self.data_transformation_step_id
+        self.data_transformation_obj.insert_struct(dict_to_write)
 
 
 class ServerClientDataTransformation(DataTransformation):
@@ -45,6 +50,24 @@ class ServerServerDataTransformation(DataTransformation):
 
 class ReadFileIntoDB(ClientServerDataTransformation):
     def __init__(self, file_name, file_type, common_id_field_name, delimiter=","):
-        pass
+        self.file_name = file_name
+        self.common_id_field_name = common_id_field_name
+        self.file_type = file_type
+        self.delimiter = delimiter
+
+    def run(self):
+        if self.file_type == "csv":
+            with open(self.file_name) as f:
+                csv_dict_reader = csv.DictReader(f)
+                i = 0
+                for row_dict in csv_dict_reader:
+                    common_id = row_dict[self.common_id_field_name]
+                    data = row_dict
+                    meta = {"row": i}
+                    self._write_data(data, common_id, meta=meta)
+                    i += 1
+
+
+
 
 

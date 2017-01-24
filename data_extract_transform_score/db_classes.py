@@ -38,6 +38,11 @@ class DataTransformationStep(DBClass):
         return list(cursor)
 
 
+class DataTransformationDB(DBClass):
+    def _table_name(self):
+        return "data_transformations"
+
+
 class DBClassName(DBClass):
     """Base class for working with table name"""
 
