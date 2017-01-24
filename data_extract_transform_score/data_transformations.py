@@ -28,8 +28,7 @@ class ClientServerDataTransformation(DataTransformation):
     """Represents where the client reads into the DB server, e.g., reading a flat file"""
     def _write_data(self, data, common_id, meta=None):
         dict_to_write = {"data": data, "common_id": common_id, "meta": meta}
-        dict_to_write["pipeline_job_id"] = self.pipeline_job_id
-        dict_to_write["data_transformation_step_id"] = self.data_transformation_step_id
+        dict_to_write["pipeline_job_data_transformation_id"] = self.pipeline_job_data_transformation_id
         self.data_transformation_obj.insert_struct(dict_to_write)
 
 
