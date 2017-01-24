@@ -4,5 +4,8 @@
    "parameters": {"file_name": "test_summary_file.csv", "file_type": "csv", "delimiter": ",", "common_id_field_name": "eid" }},
   {"step_number": 2, "data_transformation_class": "Load file", "name": "Load main file",
    "description": "Load DX file into initial data transformations",
-   "parameters": {"file_name": "test_summary_dx_list.csv", "file_type": "csv", "delimiter": ",", "common_id_field_name": "eid" }}
+   "parameters": {"file_name": "test_summary_dx_list.csv", "file_type": "csv", "delimiter": ",", "common_id_field_name": "eid" }},
+  {"step_number": 3, "data_transformation_class": "Coalesce", "name": "Group DXs into single JSON record",
+   "description": "Create diagnosis list",
+   "parameters": {"step_number": 2}}
 ]

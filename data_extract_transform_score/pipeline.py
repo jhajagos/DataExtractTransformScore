@@ -15,6 +15,7 @@ class DataTransformationStepClasses(object):
         self.step_class_callable_obj_dict = {}
 
         self._register("Load file", dt.ReadFileIntoDB)
+        self._register("Coalesce", dt.CoalesceData)
 
     def _register(self, data_transformation_step_class_name, class_obj):
         self.step_class_callable_obj_dict[data_transformation_step_class_name] = class_obj
