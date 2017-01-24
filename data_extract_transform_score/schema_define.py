@@ -63,7 +63,9 @@ def schema_define(meta_data):
                                  Column("data", JSONB),
                                  Column("meta", JSONB),
                                  Column("common_id", Integer),
-                                 Column("pipeline_job_data_transformation_id", ForeignKey("pipeline_jobs_data_transformation_steps.id"), nullable=False))
+                                 Column("pipeline_job_data_transformation_id", ForeignKey("pipeline_jobs_data_transformation_steps.id"), nullable=False),
+                                 Column("created_at", DateTime)
+                                 )
 
     return meta_data
 

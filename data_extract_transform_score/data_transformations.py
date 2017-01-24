@@ -1,4 +1,5 @@
 import csv
+import datetime
 from db_classes import PipelineJobDataTranformationStep, DataTransformationStep, DataTransformationDB
 
 class DataTransformation(object):
@@ -29,6 +30,7 @@ class ClientServerDataTransformation(DataTransformation):
     def _write_data(self, data, common_id, meta=None):
         dict_to_write = {"data": data, "common_id": common_id, "meta": meta}
         dict_to_write["pipeline_job_data_transformation_id"] = self.pipeline_job_data_transformation_id
+        dict_to_write["created_at"] = datetime.datetime.utcnow()
         self.data_transformation_obj.insert_struct(dict_to_write)
 
 
