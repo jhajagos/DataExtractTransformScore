@@ -79,8 +79,9 @@ class ReadFileIntoDB(ClientServerDataTransformation):
 class CoalesceData(ServerServerDataTransformation):
     """Aggregate JSON in data by the common id"""
 
-    def __init__(self, step_number):
-        self.step_number= step_number
+    def __init__(self, step_number, field_name=None):
+        self.step_number = step_number
+        self.field_name = field_name
 
     def run(self):
 
@@ -90,15 +91,20 @@ class CoalesceData(ServerServerDataTransformation):
         else:
             schema_text = schema + "."
 
+        if self.field_name is None:
+            data_sql_bit = "jsonb_agg(dt.data order by dt.id)"
+        else:
+            data_sql_bit = "jsonb_insert('{}'::jsonb, '{%s}', jsonb_agg(dt.data order by dt.id))" % self.field_name
+
         sql_statement = """
 insert into %sdata_transformations (common_id, data, meta, created_at, pipeline_job_data_transformation_step_id)
-select common_id, jsonb_agg(dt.data order by dt.id) as data, jsonb_agg(dt.meta order by dt.id) as meta,
+select common_id, %s, jsonb_agg(dt.meta order by dt.id) as meta,
   cast(now() as timestamp) at time zone 'utc', :pipeline_job_data_transformation_step_id
     from %sdata_transformations dt
     join %spipeline_jobs_data_transformation_steps pjdts on dt.pipeline_job_data_transformation_step_id = pjdts.id
     join %sdata_transformation_steps dts on pjdts.data_transformation_step_id = dts.id
     where step_number = :step_number and pjdts.pipeline_job_id = :pipeline_job_id
-    group by dt.common_id order by common_id""" % (schema_text, schema_text, schema_text, schema_text)
+    group by dt.common_id order by common_id""" % (schema_text, data_sql_bit, schema_text, schema_text, schema_text)
 
 
         self._sql_statement_execute(sql_statement, {"step_number": self.step_number,
@@ -106,10 +112,14 @@ select common_id, jsonb_agg(dt.data order by dt.id) as data, jsonb_agg(dt.meta o
                                                     "pipeline_job_data_transformation_step_id": self.pipeline_job_data_transformation_step_id
                                                     })
 
-        """
-        select
-        jsonb_insert('{}'::jsonb, '{dx}', data) from testing.data_transformations dt
-        where
-        dt.pipeline_job_data_transformation_step_id = 3;
-        """
+
+class MergeData(ServerServerDataTransformation):
+    """Merge JSON in data by the common id. Assumption here is the common_id field is unique"""
+
+    def __init__(self, step_number_1, step_number_2):
+        self.step_number_1 = step_number_1
+        self.step_number_2 = step_number_2
+
+    def run(self):
+        pass
 
