@@ -31,6 +31,14 @@ class DataTransformation(object):
         else:
             self.connection.execute(text(sql_statement), **parameter_dict)
 
+    def _schema_name(self):
+        schema = self.meta_data.schema
+        if schema is None:
+            schema_text = ""
+        else:
+            schema_text = schema + "."
+        return schema_text
+
 
 
 class ClientServerDataTransformation(DataTransformation):
@@ -85,11 +93,7 @@ class CoalesceData(ServerServerDataTransformation):
 
     def run(self):
 
-        schema = self.meta_data.schema
-        if schema is None:
-            schema_text = ""
-        else:
-            schema_text = schema + "."
+        schema_text = self._schema_name()
 
         if self.field_name is None:
             data_sql_bit = "jsonb_agg(dt.data order by dt.id)"
@@ -121,5 +125,31 @@ class MergeData(ServerServerDataTransformation):
         self.step_number_2 = step_number_2
 
     def run(self):
-        pass
+
+        schema = self._schema_name()
+
+        sql_statement = """
+insert into %sdata_transformations (common_id, data, meta, created_at, pipeline_job_data_transformation_step_id)
+  select t1.common_id,
+    case when t2.data is not null then t1.data || t2.data else t1.data end as data, json_build_array(t1.id, t2.id) as meta,
+    cast(now() as timestamp) at time zone 'utc', :pipeline_job_data_transformation_step_id
+from (
+    select dt1.* from %sdata_transformations dt1
+        join %spipeline_jobs_data_transformation_steps pjdts1
+            on dt1.pipeline_job_data_transformation_step_id = pjdts1.id and pjdts1.pipeline_job_id = :pipeline_job_id
+        join %sdata_transformation_steps dts1 on pjdts1.data_transformation_step_id = dts1.id and step_number = :step_number_1) t1
+    left outer join (
+    select dt2.* from %sdata_transformations dt2
+        join %spipeline_jobs_data_transformation_steps pjdts2
+            on dt2.pipeline_job_data_transformation_step_id = pjdts2.id and pjdts2.pipeline_job_id = :pipeline_job_id
+        join %sdata_transformation_steps dts2 on pjdts2.data_transformation_step_id = dts2.id and step_number = 3) t2
+    on t1.common_id = t2.common_id
+
+        """ % (schema, schema, schema, schema, schema, schema, schema)
+
+        self._sql_statement_execute(sql_statement, {"step_number_1": self.step_number_1,
+                                                    "step_number_2": self.step_number_2,
+                                                    "pipeline_job_id": self.pipeline_job_id,
+                                                    "pipeline_job_data_transformation_step_id": self.pipeline_job_data_transformation_step_id
+                                                    })
 
