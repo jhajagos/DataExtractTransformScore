@@ -12,5 +12,8 @@
    "description": "Create merged record",
    "parameters": {"step_number_1": 1, "step_number_2": 3}},
   {"step_number": 5, "data_transformation_class": "Map with Dict",
-    "parameters": {"step_number": 4, "fields_to_map": ["dx_list","code"], "mapping_rules": {"N10": "X", "N11": "Y"}}}
+    "parameters": {"step_number": 4, "fields_to_map": ["dx_list","code"], "mapping_rules": {"N10": "X", "N11": "Y"}}},
+  {"step_number": 6, "data_transformation_class": "Score", "name": "score with logistic", "description": "",
+    "parameters": {"step_number": 5, "model_name": "Logistic regression", "model_parameters": {"intercept": -5.0, "X": 2.0, "Y": 1.5}}
+  }
 ]

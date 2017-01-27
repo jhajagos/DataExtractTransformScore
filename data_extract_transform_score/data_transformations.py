@@ -2,7 +2,9 @@ import csv
 import datetime
 from db_classes import PipelineJobDataTranformationStep, DataTransformationStep, DataTransformationDB
 from sqlalchemy import text
+import models
 import json
+
 
 class DataTransformation(object):
     """Base class for representing a data transformation89jhuuu*/"""
@@ -187,14 +189,10 @@ class MapDataWithDict(ServerClientServerDataTransformation):
         else:
             self.mapping_rules = mapping_rules
 
-
     def run(self):
 
         result_proxy = self._get_data_transformation_step_proxy(self.step_number)
-
         for result in result_proxy:
-            print(self.fields_to_map)
-            print(result)
 
             result_data = result.data
 
@@ -202,11 +200,10 @@ class MapDataWithDict(ServerClientServerDataTransformation):
                 result_value = result_data[self.fields_to_map[0]]
                 result_mapped_dict = {}
                 meta_list = []
-                print("hi")
-                print(result_value)
+                #TODO: Clean up
+
                 if result_value.__class__ == [].__class__:
                     for element in result_value:
-                        print(element)
                         if element.__class__ == {}.__class__:
                             field_key = self.fields_to_map[1]
                             if field_key in element:
@@ -219,5 +216,28 @@ class MapDataWithDict(ServerClientServerDataTransformation):
 
             else:
                 pass
+
+
+class ScoreData(ServerClientServerDataTransformation):
+    """Handles scoring of datas against a model"""
+
+    def __init__(self, step_number, model_name, model_parameters):
+
+        self.step_number = step_number
+        self.model_name = model_name
+        self.model_parameters = model_parameters
+
+        self.model_registry = models.ModelsRegistry()
+
+        self.model = self.model_registry.model_name_class_dict[self.model_name]
+        self.model_obj = self.model(model_parameters)
+
+    def run(self):
+        row_proxy = self._get_data_transformation_step_proxy(self.step_number)
+        for row_obj in row_proxy:
+            score_result, meta = self.model_obj.score(row_obj.data)
+            self._write_data(score_result, row_obj.common_id, meta)
+
+
 
 
