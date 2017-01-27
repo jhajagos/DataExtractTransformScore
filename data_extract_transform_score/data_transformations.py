@@ -200,7 +200,7 @@ class MapDataWithDict(ServerClientServerDataTransformation):
                 result_value = result_data[self.fields_to_map[0]]
                 result_mapped_dict = {}
                 meta_list = []
-                #TODO: Clean up
+                # TODO: Clean up
 
                 if result_value.__class__ == [].__class__:
                     for element in result_value:
@@ -236,7 +236,8 @@ class ScoreData(ServerClientServerDataTransformation):
         row_proxy = self._get_data_transformation_step_proxy(self.step_number)
         for row_obj in row_proxy:
             score_result, meta = self.model_obj.score(row_obj.data)
-            self._write_data(score_result, row_obj.common_id, meta)
+            meta["model name"] = self.model_name
+            self._write_data({"score": score_result}, row_obj.common_id, meta)
 
 
 
