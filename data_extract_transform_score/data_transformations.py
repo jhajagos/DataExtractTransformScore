@@ -2,6 +2,7 @@ import csv
 import datetime
 from db_classes import PipelineJobDataTranformationStep, DataTransformationStep, DataTransformationDB
 from sqlalchemy import text
+import json
 
 class DataTransformation(object):
     """Base class for representing a data transformation89jhuuu*/"""
@@ -27,9 +28,11 @@ class DataTransformation(object):
 
     def _sql_statement_execute(self, sql_statement, parameter_dict=None):
         if parameter_dict is None:
-            self.connection.execute(sql_statement)
+            result_proxy = self.connection.execute(sql_statement)
         else:
-            self.connection.execute(text(sql_statement), **parameter_dict)
+            result_proxy = self.connection.execute(text(sql_statement), **parameter_dict)
+
+        return result_proxy
 
     def _schema_name(self):
         schema = self.meta_data.schema
@@ -39,15 +42,32 @@ class DataTransformation(object):
             schema_text = schema + "."
         return schema_text
 
-
-
-class ClientServerDataTransformation(DataTransformation):
-    """Represents where the client reads into the DB server, e.g., reading a flat file"""
     def _write_data(self, data, common_id, meta=None):
         dict_to_write = {"data": data, "common_id": common_id, "meta": meta}
         dict_to_write["pipeline_job_data_transformation_step_id"] = self.pipeline_job_data_transformation_step_id
         dict_to_write["created_at"] = datetime.datetime.utcnow()
         self.data_transformation_obj.insert_struct(dict_to_write)
+
+
+    def _get_data_transformation_step_proxy(self, step_number):
+
+        schema = self._schema_name()
+
+        sql_expression = """
+select dt.* from %sdata_transformations dt
+    join %spipeline_jobs_data_transformation_steps pjdts
+        on dt.pipeline_job_data_transformation_step_id = pjdts.id and pjdts.pipeline_job_id = :pipeline_job_id
+    join %sdata_transformation_steps dts on pjdts.data_transformation_step_id = dts.id
+    where dts.step_number = :step_number""" % (schema, schema, schema)
+
+        result_proxy = self._sql_statement_execute(sql_expression, {"pipeline_job_id": self.pipeline_job_id, "step_number": step_number})
+
+        return result_proxy
+
+
+
+class ClientServerDataTransformation(DataTransformation):
+    """Represents where the client reads into the DB server, e.g., reading a flat file"""
 
 
 class ServerClientDataTransformation(DataTransformation):
@@ -152,4 +172,52 @@ from (
                                                     "pipeline_job_id": self.pipeline_job_id,
                                                     "pipeline_job_data_transformation_step_id": self.pipeline_job_data_transformation_step_id
                                                     })
+
+
+class MapDataWithDict(ServerClientServerDataTransformation):
+
+    def __init__(self, fields_to_map, step_number, json_file_name=None, mapping_rules=None):
+
+        self.fields_to_map = fields_to_map
+        self.step_number = step_number
+
+        if json_file_name is not None:
+            with open(json_file_name, "r") as f:
+                self.mappng_rules = json.load(f)
+        else:
+            self.mapping_rules = mapping_rules
+
+
+    def run(self):
+
+        result_proxy = self._get_data_transformation_step_proxy(self.step_number)
+
+        for result in result_proxy:
+            print(self.fields_to_map)
+            print(result)
+
+            result_data = result.data
+
+            if self.fields_to_map[0] in result_data:
+                result_value = result_data[self.fields_to_map[0]]
+                result_mapped_dict = {}
+                meta_list = []
+                print("hi")
+                print(result_value)
+                if result_value.__class__ == [].__class__:
+                    for element in result_value:
+                        print(element)
+                        if element.__class__ == {}.__class__:
+                            field_key = self.fields_to_map[1]
+                            if field_key in element:
+                                field_value = element[field_key]
+                                if field_value in self.mapping_rules:
+                                    result_mapped_dict[self.mapping_rules[field_value]] = 1
+                                    meta_list += [{field_value: self.mapping_rules[field_value]}]
+
+                self._write_data(result_mapped_dict, result.common_id, meta_list)
+
+            else:
+                pass
+
 
