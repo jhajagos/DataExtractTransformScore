@@ -70,7 +70,7 @@ class Jobs(object):
         self.connection = connection
         self.meta_data = meta_data
         self.job_id = None
-        self.job_obj =None
+        self.job_obj = None
         self.pipelines = []
         self.pipeline_jobs_ids = []
         self.name = name

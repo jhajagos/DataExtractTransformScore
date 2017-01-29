@@ -25,6 +25,9 @@ class DataTransformation(object):
         self.pipeline_job_id = self.pipeline_job_data_trans_row.pipeline_job_id
         self.data_transformation_step_id = self.pipeline_job_data_trans_row.data_transformation_step_id
 
+        self.data_transformation_step_obj = DataTransformationStep(self.connection, self.meta_data)
+        self.data_transformation_step_row = self.data_transformation_step_obj.find_by_id(self.data_transformation_step_id)
+
         self.data_transformation_obj = DataTransformationDB(self.connection, self.meta_data)
         #self.data_transformation_step_row = self.data_transformation_obj.find_by_id(self.data_transformation_step_id)
 
@@ -50,7 +53,6 @@ class DataTransformation(object):
         dict_to_write["created_at"] = datetime.datetime.utcnow()
         self.data_transformation_obj.insert_struct(dict_to_write)
 
-
     def _get_data_transformation_step_proxy(self, step_number):
 
         schema = self._schema_name()
@@ -65,7 +67,6 @@ select dt.* from %sdata_transformations dt
         result_proxy = self._sql_statement_execute(sql_expression, {"pipeline_job_id": self.pipeline_job_id, "step_number": step_number})
 
         return result_proxy
-
 
 
 class ClientServerDataTransformation(DataTransformation):
@@ -87,6 +88,7 @@ class ServerServerDataTransformation(DataTransformation):
 
 
 class ReadFileIntoDB(ClientServerDataTransformation):
+    """Read a fine into a database"""
     def __init__(self, file_name, file_type, common_id_field_name, delimiter=","):
         self.file_name = file_name
         self.common_id_field_name = common_id_field_name
@@ -142,13 +144,33 @@ select common_id, %s, jsonb_agg(dt.meta order by dt.id) as meta,
 class MergeData(ServerServerDataTransformation):
     """Merge JSON in data by the common id. Assumption here is the common_id field is unique"""
 
-    def __init__(self, step_number_1, step_number_2):
-        self.step_number_1 = step_number_1
-        self.step_number_2 = step_number_2
+    def __init__(self, step_numbers):
+
+        step_number_pairs = []
+        for step_number in step_numbers:
+            if step_number.__class__ == [].__class__:
+                step_number_pairs += [(step_number[0], step_number[1])]
+            else:
+                step_number_pairs += [(step_number, None)]
+
+        self.step_number_pairs = step_number_pairs
+
+    def _field_name_keyed(self, field_name, alias):
+        if  field_name is None:
+            data_sql_bit = "%s.data" % alias
+        else:
+            data_sql_bit = "jsonb_insert('{}'::jsonb, '{%s}', %s.data)" % (field_name, alias)
+
+        return data_sql_bit
 
     def run(self):
-
         schema = self._schema_name()
+
+        step_number_1, field_name_1 = self.step_number_pairs[0]
+        step_number_2, field_name_2 = self.step_number_pairs[1]
+
+        field_name_expanded_1 = self._field_name_keyed(field_name_1, "dt1")
+        field_name_expanded_2 = self._field_name_keyed(field_name_2, "dt2")
 
         sql_statement = """
 insert into %sdata_transformations (common_id, data, meta, created_at, pipeline_job_data_transformation_step_id)
@@ -156,24 +178,57 @@ insert into %sdata_transformations (common_id, data, meta, created_at, pipeline_
     case when t2.data is not null then t1.data || t2.data else t1.data end as data, json_build_array(t1.id, t2.id) as meta,
     cast(now() as timestamp) at time zone 'utc', :pipeline_job_data_transformation_step_id
 from (
-    select dt1.* from %sdata_transformations dt1
+    select dt1.id, dt1.common_id, %s as data from %sdata_transformations dt1
         join %spipeline_jobs_data_transformation_steps pjdts1
             on dt1.pipeline_job_data_transformation_step_id = pjdts1.id and pjdts1.pipeline_job_id = :pipeline_job_id
         join %sdata_transformation_steps dts1 on pjdts1.data_transformation_step_id = dts1.id and step_number = :step_number_1) t1
     left outer join (
-    select dt2.* from %sdata_transformations dt2
+    select dt2.id, dt2.common_id, %s as data from %sdata_transformations dt2
         join %spipeline_jobs_data_transformation_steps pjdts2
             on dt2.pipeline_job_data_transformation_step_id = pjdts2.id and pjdts2.pipeline_job_id = :pipeline_job_id
-        join %sdata_transformation_steps dts2 on pjdts2.data_transformation_step_id = dts2.id and step_number = 3) t2
+        join %sdata_transformation_steps dts2 on pjdts2.data_transformation_step_id = dts2.id and step_number = :step_number_2) t2
     on t1.common_id = t2.common_id
+        """ % (schema, field_name_expanded_1, schema, schema, schema, field_name_expanded_2, schema, schema, schema)
 
-        """ % (schema, schema, schema, schema, schema, schema, schema)
-
-        self._sql_statement_execute(sql_statement, {"step_number_1": self.step_number_1,
-                                                    "step_number_2": self.step_number_2,
+        self._sql_statement_execute(sql_statement, {"step_number_1": step_number_1,
+                                                    "step_number_2":  step_number_2,
                                                     "pipeline_job_id": self.pipeline_job_id,
                                                     "pipeline_job_data_transformation_step_id": self.pipeline_job_data_transformation_step_id
                                                     })
+
+        if len(self.step_number_pairs) > 2:
+
+            for step_number_pair in self.step_number_pairs[2:]:
+                step_number_2, field_name_2 = step_number_pair
+                field_name_expanded_2 = self._field_name_keyed(field_name_2, "dt2")
+
+                sql_expression = """
+                update %sdata_transformations as dtp
+            set data =
+                case when t2.data is not null then t1.data || t2.data else t1.data end,
+                 meta = t1.meta || jsonb_build_array(t2.id)
+                 from
+                (select dt1.id, dt1.data, dt1.common_id, dt1.meta from
+                     %sdata_transformations dt1 join
+                        %spipeline_jobs_data_transformation_steps pjdts1
+                        on pjdts1.id = dt1.pipeline_job_data_transformation_step_id and pjdts1.pipeline_job_id = :pipeline_job_id
+                    join %sdata_transformation_steps dts1
+                        on dts1.id = pjdts1.data_transformation_step_id and dts1.step_number = :current_step_number) t1
+                left outer join
+                (select dt2.id, dt2.common_id, %s as data from
+                     %sdata_transformations dt2 join
+                     %spipeline_jobs_data_transformation_steps pjdts2
+                        on pjdts2.id = dt2.pipeline_job_data_transformation_step_id and pjdts2.pipeline_job_id = :pipeline_job_id
+                    join %sdata_transformation_steps dts2
+                        on dts2.id = pjdts2.data_transformation_step_id and dts2.step_number = :step_number_2) t2
+                on t2.common_id = t1.common_id where dtp.id = t1.id
+                """ % (schema, schema, schema, schema, field_name_expanded_2, schema, schema, schema)
+
+                self._sql_statement_execute(sql_expression, {"pipeline_job_id": self.pipeline_job_id,
+                                                             "step_number_2": step_number_2,
+                                                             "current_step_number": self.data_transformation_step_row.step_number
+                                                             })
+
 
 
 class MapDataWithDict(ServerClientServerDataTransformation):
@@ -238,7 +293,3 @@ class ScoreData(ServerClientServerDataTransformation):
             score_result, meta = self.model_obj.score(row_obj.data)
             meta["model name"] = self.model_name
             self._write_data({"score": score_result}, row_obj.common_id, meta)
-
-
-
-

@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, Integer, Text, String, DateTime, ForeignKey, create_engine, MetaData, Boolean
+from sqlalchemy import Table, Column, Integer, Text, String, DateTime, ForeignKey, create_engine, MetaData, Boolean, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 import json
 
@@ -47,7 +47,9 @@ def schema_define(meta_data):
                                              ForeignKey("data_transformation_step_classes.id")),
                                       Column("parameters", JSONB),
                                       Column("description", Text),
-                                      Column("pipeline_id", ForeignKey("pipelines.id"), nullable=False))
+                                      Column("pipeline_id", ForeignKey("pipelines.id"), nullable=False),
+                                      UniqueConstraint('pipeline_id', "step_number", "name", name='idx_dts_pn')
+                                      )
 
     pipeline_jobs_data_transformation_steps = Table("pipeline_jobs_data_transformation_steps", meta_data,
                                                  Column("id", Integer, primary_key=True),
