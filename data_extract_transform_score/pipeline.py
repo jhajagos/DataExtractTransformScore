@@ -19,6 +19,7 @@ class DataTransformationStepClasses(object):
         self._register("Merge", dt.MergeData)
         self._register("Map with Dict", dt.MapDataWithDict)
         self._register("Score", dt.ScoreData)
+        self._register("Write file", dt.WriteFile)
 
     def _register(self, data_transformation_step_class_name, class_obj):
         self.step_class_callable_obj_dict[data_transformation_step_class_name] = class_obj

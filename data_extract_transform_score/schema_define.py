@@ -118,7 +118,8 @@ def create_and_populate_schema(meta_data, connection):
                                       (6, "Output", None)
                                      ]
 
-    child_data_transform_child_classes_1 = [(10, "Load file", 1), (40, "Map with Dict", 4), (50, "Custom class score", 5)]
+    child_data_transform_child_classes_1 = [(10, "Load file", 1), (40, "Map with Dict", 4),
+                                            (50, "Custom class score", 5), (60, "Write file")]
 
     data_transform_classes = primary_data_transform_classes + child_data_transform_child_classes_1
 

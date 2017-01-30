@@ -17,5 +17,9 @@
   {"step_number": 6, "data_transformation_class": "Score", "name": "Score with logistic regression", "description": "",
     "parameters": {"step_number": 5, "model_name": "Logistic regression", "model_parameters": {"intercept": -5.0, "X": 2.0, "Y": 1.5}}},
   {"step_number": 7, "data_transformation_class": "Merge", "name": "Merge scores", "description": "Connect multiple records together",
-   "parameters": {"step_numbers": [4, [5, "transformed_dx"], [6, "model_score"]]}}
+   "parameters": {"step_numbers": [4, [5, "transformed_dx"], [6, "model_score"]]}},
+  {"step_number": 8, "data_transformation_class": "Write file", "name": "Write results of model evaluation and scoring",
+   "description": "Extract details of the model run to JSON",
+   "parameters": {"file_name": "test_output.json", "file_type": "JSON", "step_number": 7}}
+
 ]

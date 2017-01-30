@@ -29,7 +29,6 @@ class DataTransformation(object):
         self.data_transformation_step_row = self.data_transformation_step_obj.find_by_id(self.data_transformation_step_id)
 
         self.data_transformation_obj = DataTransformationDB(self.connection, self.meta_data)
-        #self.data_transformation_step_row = self.data_transformation_obj.find_by_id(self.data_transformation_step_id)
 
     def _sql_statement_execute(self, sql_statement, parameter_dict=None):
         if parameter_dict is None:
@@ -106,6 +105,8 @@ class ReadFileIntoDB(ClientServerDataTransformation):
                     meta = {"row": i}
                     self._write_data(data, common_id, meta=meta)
                     i += 1
+        else:
+            raise RuntimeError
 
 
 class CoalesceData(ServerServerDataTransformation):
@@ -230,9 +231,8 @@ from (
                                                              })
 
 
-
 class MapDataWithDict(ServerClientServerDataTransformation):
-
+    """Create an indicator flag based on a look-up of a table"""
     def __init__(self, fields_to_map, step_number, json_file_name=None, mapping_rules=None):
 
         self.fields_to_map = fields_to_map
@@ -293,3 +293,26 @@ class ScoreData(ServerClientServerDataTransformation):
             score_result, meta = self.model_obj.score(row_obj.data)
             meta["model name"] = self.model_name
             self._write_data({"score": score_result}, row_obj.common_id, meta)
+
+
+class WriteFile(ServerClientDataTransformation):
+    """To the client database"""
+
+    def __init__(self, step_number, file_name, file_type, fields_to_export=None):
+        self.step_number = step_number
+        self.file_name = file_name
+        self.file_type = file_type
+        self.fields_to_export = fields_to_export
+
+    def run(self):
+        row_proxy = self._get_data_transformation_step_proxy(self.step_number)
+        result_list = []
+        if self.file_type == "JSON":
+
+            for row in row_proxy:
+                result_list += [row.data]
+            with open(self.file_name, "w") as fw:
+                json.dump(result_list, fw, sort_keys=True, indent=4, separators=(',', ': '))
+
+        else:
+            raise RuntimeError
