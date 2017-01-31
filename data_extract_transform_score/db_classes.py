@@ -28,6 +28,7 @@ class DBClass(object):
         connection = self.connection.execute(sql_expr)
         return list(connection)[0]
 
+
 class DataTransformationStep(DBClass):
     def _table_name(self):
         return "data_transformation_steps"

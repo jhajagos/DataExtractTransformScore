@@ -21,5 +21,4 @@
   {"step_number": 8, "data_transformation_class": "Write file", "name": "Write results of model evaluation and scoring",
    "description": "Extract details of the model run to JSON",
    "parameters": {"file_name": "test_output.json", "file_type": "JSON", "step_number": 7}}
-
 ]
