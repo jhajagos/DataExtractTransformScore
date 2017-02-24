@@ -25,8 +25,8 @@ class DBClass(object):
 
     def find_by_id(self, row_id):
         sql_expr = self.table_obj.select().where(self.table_obj.c.id == row_id)
-        connection = self.connection.execute(sql_expr)
-        return list(connection)[0]
+        cursor = self.connection.execute(sql_expr)
+        return list(cursor)[0]
 
 
 class DataTransformationStep(DBClass):
