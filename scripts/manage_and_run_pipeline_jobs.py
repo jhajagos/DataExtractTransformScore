@@ -16,6 +16,15 @@ def list_available_pipelines(config_dict):
 def initialize_database_schema(confg_dict):
     pass
 
+def print_pipeline_steps(pipeline_name, config_dict):
+    pass
+
+def load_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict):
+    pass
+
+def run_pipeline(pipeline_name, config_dict):
+    pass
+
 def main():
     arg_parse_obj = argparse.ArgumentParser(description='Create, manage, and run data extract and pipelines')
     arg_parse_obj.add_argument("-c", "--config-json-filename", dest="config_json_filename",
@@ -29,7 +38,7 @@ def main():
     arg_parse_obj.add_argument("-i", "--initialize-database-schema", action="store_true", default=False,
                                dest="initialize_database_schema",
                                help="In an empty PostGreSQL schema initialize database")
-    arg_parse_obj.add_argument("-r", "--run-pipeline", action="store_true", help="")
+    arg_parse_obj.add_argument("-r", "--run-pipeline", action="store_true", help="Run pipeline")
 
     arg_obj = arg_parse_obj.parse_args()
 
@@ -53,18 +62,19 @@ def main():
     if arg_obj.print_pipeline_steps or arg_obj.run_pipeline or arg_obj.pipeline_json_filename:
         pipeline_name = arg_obj.pipeline_name
         if pipeline_name:
-            pass
+            if arg_obj.print_pipeline_steps:
+                print_pipeline_steps(pipeline_name, config_dict)
+                return 0
+            elif arg_obj.pipeline_json_filename:
+                load_pipeline_json_filename(arg_obj.pipeline_json_filename, pipeline_name, config_dict)
+                
+                
         else:
             raise RuntumeError, "Pipeline name must be provided"
             
             
             
-            
-        
-
-
-
-
+           
 
 
 if __name__ == "__main__":
