@@ -93,8 +93,7 @@ class Jobs(object):
         job_dict = {"job_status_id": not_start_obj.get_id(),
                     "name": self.name,
                     "start_date_time": datetime.datetime.utcnow(),
-                    "is_active": True
-                    }
+                    "is_active": True}
 
         self.job_id = self.job_obj.insert_struct(job_dict)
 
@@ -109,7 +108,7 @@ class Jobs(object):
             pipeline_job_obj.insert_struct(pipeline_obj_dict)
 
     def run_job(self):
-        """Executes the job"""
+        """Execute the job"""
 
         data_transformation_step_obj = DataTransformationStep(self.connection, self.meta_data)
         data_transformation_step_class_obj = DataTransformationStepClassDB(self.connection, self.meta_data)
