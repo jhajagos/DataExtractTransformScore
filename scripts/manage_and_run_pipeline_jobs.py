@@ -24,7 +24,7 @@ def main():
     arg_parse_obj.add_argument("-n", "--pipeline-name", dest="pipeline_json_file_name", help="Set name of the pipeline")
     arg_parse_obj.add_argument("-l", "--list-available-pipelines", dest="list_available pipelines",
                                action="store_true", default=False, help="List name of pipelines that are currently loaded")
-    arg_parse_obj.add_argument("-s", "--print-pipeline-steps", dest="print_pipeline_steps", default="false",
+    arg_parse_obj.add_argument("-s", "--print-pipeline-steps", dest="print_pipeline_steps", default=False,
                                action="store_true", help="")
     arg_parse_obj.add_argument("-i", "--initialize-database-schema", action="store_true", default=False,
                                dest="initialize_database_schema",
@@ -55,7 +55,7 @@ def main():
         if pipeline_name:
             pass
         else:
-            raise RuntumeError, "Pipeline namd must be provided"
+            raise RuntumeError, "Pipeline name must be provided"
             
             
             
