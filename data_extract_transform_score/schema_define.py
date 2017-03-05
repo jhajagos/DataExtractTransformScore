@@ -100,9 +100,13 @@ def populate_reference_table(table_name, meta, connection, list_of_values):
         connection.execute(table_obj.insert(tuple_value))
 
 
-def create_and_populate_schema(meta_data, connection):
+def create_and_populate_schema(connection, meta_data, drop_all=True):
+
     meta_data = schema_define(meta_data)
-    meta_data.drop_all()
+
+    if drop_all:
+        meta_data.drop_all()
+
     meta_data.create_all(checkfirst=True)
 
     table_dict = get_table_names_without_schema(meta_data)

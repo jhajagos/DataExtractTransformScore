@@ -15,7 +15,7 @@ class TestLoadPipeline(unittest.TestCase):
             self.connection = self.engine.connect()
             self.meta_data = sa.MetaData(self.connection, schema=config["db_schema"])
 
-        schema_define.create_and_populate_schema(self.meta_data, self.connection)
+        schema_define.create_and_populate_schema(self.connection, self.meta_data)
 
         if os.path.exists("./test_output.json"):
             os.remove("./test_output.json")
