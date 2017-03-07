@@ -93,7 +93,7 @@ class DataTransformationStepClass(DBClassName):
     def _table_name(self):
         return "data_transformation_step_classes"
 
-    def get_datasteps_by_pipeline_id(self, pipeline_id):
+    def get_data_steps_by_pipeline_id(self, pipeline_id):
         sql_expr = self.table_obj.select.where(self.table_obj.c.pipeline_id == pipeline_id)
         cursor = self.connection.execute(sql_expr)
         return list(cursor)
@@ -117,6 +117,7 @@ class JobClass(DBClassName):
 class PipelineJob(DBClass):
     def _table_name(self):
         return "pipeline_jobs"
+
     def find_by_job_id_and_pipeline_id(self, job_id, pipeline_id):
         sql_expr = self.table_obj.select().where(self.table_obj.c.pipeline_id == pipeline_id
                                                  and self.table_obj.c.job_id == job_id)

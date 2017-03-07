@@ -79,24 +79,6 @@ def run_pipeline(pipeline_name, config_dict):
 
     print("Ran job: '%s' against pipeline: '%s'" % (job_name, pipeline_name))
 
-    # TODO: Fix this error
-    # Path needs to be set
-    """
-    C:\Users\janos\GitHub\DataExtractTransformScore>python .\scripts\manage_and_run_pipeline_jobs.py -n testing_pipeline -r
-Traceback (most recent call last):
-  File ".\scripts\manage_and_run_pipeline_jobs.py", line 136, in <module>
-    main()
-  File ".\scripts\manage_and_run_pipeline_jobs.py", line 130, in main
-    run_pipeline(pipeline_name, config_dict)
-  File ".\scripts\manage_and_run_pipeline_jobs.py", line 73, in run_pipeline
-    jobs_obj.run_job()
-  File "C:\Users\janos\GitHub\DataExtractTransformScore\data_extract_transform_score\pipeline.py", line 155, in run_job
-    data_step_class_obj.run()
-  File "C:\Users\janos\GitHub\DataExtractTransformScore\data_extract_transform_score\data_transformations.py", line 99, in run
-    with open(self.file_name) as f:
-IOError: [Errno 2] No such file or directory: u'test_summary_file.csv'
-    """
-
 
 def main():
     arg_parse_obj = argparse.ArgumentParser(description='Create, manage, and run data extract and pipelines')
