@@ -4,6 +4,7 @@ from db_classes import PipelineJobDataTranformationStep, DataTransformationStep,
 from sqlalchemy import text
 import models
 import json
+import os
 
 
 class DataTransformation(object):
@@ -16,6 +17,9 @@ class DataTransformation(object):
         """This method will be called by the JobRunner"""
         self.connection = connection
         self.meta_data = meta_data
+
+    def set_file_directory(self, file_directory):
+        self.file_directory = file_directory
 
     def set_pipeline_job_data_transformation_id(self, pipeline_job_data_transformation_id):
         """This method will be called by the JobRunner"""
@@ -96,7 +100,9 @@ class ReadFileIntoDB(ClientServerDataTransformation):
 
     def run(self):
         if self.file_type == "csv":
-            with open(self.file_name) as f:
+
+            file_name = os.path.abspath(os.path.join(self.file_directory, self.file_name))
+            with open(file_name) as f:
                 csv_dict_reader = csv.DictReader(f)
                 i = 0
                 for row_dict in csv_dict_reader:

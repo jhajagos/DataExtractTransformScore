@@ -65,9 +65,14 @@ def load_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict):
 def run_pipeline(pipeline_name, config_dict):
     connection, meta_data = get_db_connection(config_dict)
 
+    if "root_file_path" in config_dict:
+        root_file_path = config_dict["root_file_path"]
+    else:
+        root_file_path = "./"
+
     job_name = "Job_" + str(random.randint(1, 10000))
 
-    jobs_obj = Jobs(job_name, connection, meta_data)
+    jobs_obj = Jobs(job_name, connection, meta_data, root_file_path)
     jobs_obj.create_jobs_to_run(pipeline_name)
 
     jobs_obj.run_job()

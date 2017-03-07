@@ -67,9 +67,10 @@ class Pipeline(DBClassName):
 class Jobs(object):
     """Class for running and executing jobs"""
 
-    def __init__(self, name, connection, meta_data):
+    def __init__(self, name, connection, meta_data, file_directory="./"):
         self.connection = connection
         self.meta_data = meta_data
+        self.file_directory = file_directory
         self.job_id = None
         self.job_obj = None
         self.pipelines = []
@@ -151,6 +152,7 @@ class Jobs(object):
                 data_step_class_obj = data_step_class(**parameters) # Call with parameters from function
                 data_step_class_obj.set_connection_and_meta_data(self.connection, self.meta_data) # Set DB connection
                 data_step_class_obj.set_pipeline_job_data_transformation_id(pipeline_job_data_transformation_step_id)
+                data_step_class_obj.set_file_directory(self.file_directory)
 
                 data_step_class_obj.run()
 
