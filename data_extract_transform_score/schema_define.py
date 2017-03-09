@@ -93,7 +93,7 @@ def get_table_names_without_schema(meta):
     return table_dict
 
 
-def populate_reference_table(table_name, meta, connection, list_of_values):
+def populate_reference_table(table_name, connection, meta, list_of_values):
     table_obj = meta.tables[table_name]
 
     for tuple_value in list_of_values:
@@ -111,7 +111,7 @@ def create_and_populate_schema(connection, meta_data, drop_all=True):
 
     table_dict = get_table_names_without_schema(meta_data)
     job_statuses = [(1, "Started"), (2, "Finished"), (3, "Not started")]
-    populate_reference_table(table_dict["job_statuses"], meta_data, connection, job_statuses)
+    populate_reference_table(table_dict["job_statuses"], connection, meta_data, job_statuses)
 
     primary_data_transform_classes = [
                                       (1,"Load", None),
@@ -131,7 +131,7 @@ def create_and_populate_schema(connection, meta_data, drop_all=True):
 
     data_transform_classes = primary_data_transform_classes + child_data_transform_child_classes_1
 
-    populate_reference_table(table_dict["data_transformation_step_classes"], meta_data, connection, data_transform_classes)
+    populate_reference_table(table_dict["data_transformation_step_classes"],connection,  meta_data, data_transform_classes)
 
     return meta_data, table_dict
 
