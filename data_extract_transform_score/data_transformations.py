@@ -246,7 +246,7 @@ class MapDataWithDict(ServerClientServerDataTransformation):
 
         if json_file_name is not None:
             with open(json_file_name, "r") as f:
-                self.mappng_rules = json.load(f)
+                self.mapping_rules = json.load(f)
         else:
             self.mapping_rules = mapping_rules
 
@@ -280,7 +280,7 @@ class MapDataWithDict(ServerClientServerDataTransformation):
 
 
 class ScoreData(ServerClientServerDataTransformation):
-    """Handles scoring of datas against a model"""
+    """Handles scoring of data against a model"""
 
     def __init__(self, step_number, model_name, model_parameters):
 

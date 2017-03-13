@@ -40,7 +40,7 @@ class LogisticRegressionModel(PredictiveModel):
                 variables_included += [key]
                 coefficients_included += [self.coefficients[key] * input_dict[key]]
 
-        coefficients_included_paired = self.pair_with_coefficients(variables_included, coefficients_included)
+        coefficients_included_paired = self._pair_with_coefficients(variables_included, coefficients_included)
 
         variables_not_included = []
         coefficients_not_included = []
@@ -49,22 +49,30 @@ class LogisticRegressionModel(PredictiveModel):
                 variables_not_included += [key]
                 coefficients_not_included += [self.coefficients[key]]
 
-        coefficients_not_included_pairs = self.pair_with_coefficients(variables_not_included, coefficients_not_included)
+        coefficients_not_included_pairs = self._pair_with_coefficients(variables_not_included, coefficients_not_included)
 
-        return (self.compute_score_using_logistic(coefficients_included),
+        return (self._compute_score_using_logistic(coefficients_included),
                 {"coefficients_included": coefficients_included_paired,
                  "coefficients_not_included": coefficients_not_included_pairs})
 
-    def pair_with_coefficients(self, pair1, pair2):
+    def _pair_with_coefficients(self, pair1, pair2):
 
         paired_list = [(pair1[i], pair2[i]) for i in range(len(pair1))]
         paired_list.sort(key=lambda x: x[1], reverse=True)
 
         return paired_list
 
-    def compute_score_using_logistic(self, coefficients):
+    def _compute_score_using_logistic(self, coefficients):
         return math.exp(sum(coefficients)) / (1 + math.exp(sum(coefficients)))
 
 
 class MultipleKeyedModels(PredictiveModel):
+    pass
+
+
+class HTTPRestModel(PredictiveModel):
+    pass
+
+
+class OpenScoringRestModel(HTTPRestModel):
     pass
