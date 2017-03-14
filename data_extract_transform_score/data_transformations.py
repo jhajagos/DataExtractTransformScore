@@ -286,9 +286,9 @@ class TransformDataWithFunction(ServerClientServerDataTransformation):
         self.step_number = step_number
         try:
             import localized_dets as ld
-            self.transformation_registry = models.TransformationsRegistry(ld.LOCAL_TRANSFORMATIONS_TO_REGISTER)
+            self.transformation_registry = TransformationsRegistry(ld.LOCAL_TRANSFORMATIONS_TO_REGISTER)
         except ImportError:
-            self.transformation_registry = models.TransformationsRegistry()
+            self.transformation_registry = TransformationsRegistry()
 
         self.transformation_func = self.transformation_registry.transformation_name_dict[transformation_name]
 
@@ -296,6 +296,8 @@ class TransformDataWithFunction(ServerClientServerDataTransformation):
         row_proxy = self._get_data_transformation_step_proxy(self.step_number)
         for row_obj in row_proxy:
             data, meta = self.transformation_func(row_obj.data)
+            # print(data, meta)
+            # raise RuntimeError
             self._write_data(data, row_obj.common_id, meta)
 
 

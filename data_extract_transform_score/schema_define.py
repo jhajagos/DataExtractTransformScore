@@ -119,16 +119,17 @@ def create_and_populate_schema(connection, meta_data, drop_all=True):
                                       (3, "Coalesce"),
                                       (4, "Transform", None),
                                       (5, "Score", None),
-                                      (6, "Output", None)
-                                     ]
+                                      (6, "Output", None)]
 
     child_data_transform_child_classes_1 = [(10, "Load file", 1),
                                             (40, "Map with Dict", 4),
                                             (41, "Transform with function", 4),
-                                            (60, "Write file")
-                                           ]
+                                            (51, "Custom Scoring", 5),
+                                            (60, "Write file")]
 
-    data_transform_classes = primary_data_transform_classes + child_data_transform_child_classes_1
+    child_data_transform_child_classes_2 = [(511, "Score with OpenScoring", 51)]
+
+    data_transform_classes = primary_data_transform_classes + child_data_transform_child_classes_1 + child_data_transform_child_classes_2
 
     populate_reference_table(table_dict["data_transformation_step_classes"],connection,  meta_data, data_transform_classes)
 
