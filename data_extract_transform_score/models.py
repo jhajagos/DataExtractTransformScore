@@ -8,7 +8,8 @@ class ModelsRegistry(object):
 
     def __init__(self, model_name_class_tuples_list=None):
 
-        hard_coded_model_name_class_tuples = [("Logistic regression", LogisticRegressionModel)]
+        hard_coded_model_name_class_tuples = [("Logistic regression", LogisticRegressionModel),
+                                              ("Linear regression", LinearRegressionModel)]
 
         if model_name_class_tuples_list is None:
             model_name_class_tuples_list = hard_coded_model_name_class_tuples
@@ -29,8 +30,14 @@ class PredictiveModel(object):
     def score(self, input_dict):
         return (0.0, None)
 
+class GeneralizedLinearModel(PredictiveModel):
+    def _pair_with_coefficients(self, pair1, pair2):
 
-class LogisticRegressionModel(PredictiveModel):
+        paired_list = [(pair1[i], pair2[i]) for i in range(len(pair1))]
+        paired_list.sort(key=lambda x: x[1], reverse=True)
+
+        return paired_list
+
 
     def score(self, input_dict):
 
@@ -54,19 +61,23 @@ class LogisticRegressionModel(PredictiveModel):
 
         coefficients_not_included_pairs = self._pair_with_coefficients(variables_not_included, coefficients_not_included)
 
-        return (self._compute_score_using_logistic(coefficients_included),
+        return (self._compute_score_using_model(coefficients_included),
                 {"coefficients_included": coefficients_included_paired,
                  "coefficients_not_included": coefficients_not_included_pairs})
 
-    def _pair_with_coefficients(self, pair1, pair2):
+    def _compute_score_using_model(self, input_dict):
+        return None
 
-        paired_list = [(pair1[i], pair2[i]) for i in range(len(pair1))]
-        paired_list.sort(key=lambda x: x[1], reverse=True)
 
-        return paired_list
-
-    def _compute_score_using_logistic(self, coefficients):
+class LogisticRegressionModel(GeneralizedLinearModel):
+    def _compute_score_using_model(self, coefficients):
         return math.exp(sum(coefficients)) / (1 + math.exp(sum(coefficients)))
+
+
+class LinearRegressionModel(GeneralizedLinearModel):
+    def _compute_score_using_model(self, coefficients):
+        return sum(coefficients)
+
 
 
 class BuildMultipleKeyedModel(object):

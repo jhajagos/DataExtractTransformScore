@@ -122,11 +122,10 @@ def create_and_populate_schema(connection, meta_data, drop_all=True):
                                       (6, "Output", None)
                                      ]
 
-    child_data_transform_child_classes_1 = [(10, "Load file", 1), (40, "Map with Dict", 4),
-                                            (50, "Custom class score", 5),
-                                            (60, "Write file"),
-                                            (51, "Score with Rest API", 5),
-                                            (510, "Score with Openscoring Rest API", 51)
+    child_data_transform_child_classes_1 = [(10, "Load file", 1),
+                                            (40, "Map with Dict", 4),
+                                            (41, "Transform with function", 4),
+                                            (60, "Write file")
                                            ]
 
     data_transform_classes = primary_data_transform_classes + child_data_transform_child_classes_1

@@ -1,11 +1,11 @@
 import csv
 import datetime
 from db_classes import PipelineJobDataTranformationStep, DataTransformationStep, DataTransformationDB
+from transformations import TransformationsRegistry
 from sqlalchemy import text
 import models
 import json
 import os
-
 
 
 class DataTransformation(object):
@@ -280,6 +280,25 @@ class MapDataWithDict(ServerClientServerDataTransformation):
                 pass
 
 
+class TransformDataWithFunction(ServerClientServerDataTransformation):
+    def __init__(self, step_number, transformation_name):
+
+        self.step_number = step_number
+        try:
+            import localized_dets as ld
+            self.transformation_registry = models.TransformationsRegistry(ld.LOCAL_TRANSFORMATIONS_TO_REGISTER)
+        except ImportError:
+            self.transformation_registry = models.TransformationsRegistry()
+
+        self.transformation_func = self.transformation_registry.transformation_name_dict[transformation_name]
+
+    def run(self):
+        row_proxy = self._get_data_transformation_step_proxy(self.step_number)
+        for row_obj in row_proxy:
+            data, meta = self.transformation_func(row_obj.data)
+            self._write_data(data, row_obj.common_id, meta)
+
+
 class ScoreData(ServerClientServerDataTransformation):
     """Handles scoring of data against a model"""
 
@@ -290,8 +309,8 @@ class ScoreData(ServerClientServerDataTransformation):
         self.model_parameters = model_parameters
 
         try:
-            import local_models_dets as lmd
-            self.model_registry = models.ModelsRegistry(lmd.LOCAL_MODELS_TO_REGISTER)
+            import localized_dets as ld
+            self.model_registry = models.ModelsRegistry(ld.LOCAL_MODELS_TO_REGISTER)
         except ImportError:
             self.model_registry = models.ModelsRegistry()
 
