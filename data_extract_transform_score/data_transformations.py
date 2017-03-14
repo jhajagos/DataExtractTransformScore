@@ -7,6 +7,7 @@ import json
 import os
 
 
+
 class DataTransformation(object):
     """Base class for representing a data transformation89jhuuu*/"""
 
@@ -288,7 +289,11 @@ class ScoreData(ServerClientServerDataTransformation):
         self.model_name = model_name
         self.model_parameters = model_parameters
 
-        self.model_registry = models.ModelsRegistry()
+        try:
+            import local_models_dets as lmd
+            self.model_registry = models.ModelsRegistry(lmd.LOCAL_MODELS_TO_REGISTER)
+        except ImportError:
+            self.model_registry = models.ModelsRegistry()
 
         self.model = self.model_registry.model_name_class_dict[self.model_name]
         self.model_obj = self.model(model_parameters)
