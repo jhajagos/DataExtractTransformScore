@@ -3,8 +3,8 @@ import argparse
 import os
 import json
 import sqlalchemy as sa
-import sys
 import random
+import sys
 
 try:
     import data_extract_transform_score as dets
@@ -69,6 +69,10 @@ def run_pipeline(pipeline_name, config_dict):
         root_file_path = config_dict["root_file_path"]
     else:
         root_file_path = "./"
+
+    if "local_pipeline_import_path" in config_dict:
+        if pipeline_name in config_dict["local_pipeline_import_path"]:
+            sys.path.insert(0, config_dict["local_pipeline_import_path"][pipeline_name])
 
     job_name = "Job_" + str(random.randint(1, 10000))
 

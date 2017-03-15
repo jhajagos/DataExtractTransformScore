@@ -30,7 +30,6 @@ class TestUpdateWithCustomClasses(unittest.TestCase):
             pipeline_structure = json.load(f)
 
         pipeline_name = "test custom pipeline"
-        sys.path.insert(0, self.config["local_pipeline_import_path"][pipeline_name])
 
         pipeline_obj = pipeline.Pipeline(pipeline_name, self.connection, self.meta_data)
         pipeline_obj.load_steps_into_db(pipeline_structure)
