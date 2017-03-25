@@ -23,12 +23,13 @@ class ModelsRegistry(object):
 
 
 class PredictiveModel(object):
-
+    """Base class for a predictive model"""
     def __init__(self, parameters):
         self.parameters = parameters
 
     def score(self, input_dict):
         return (0.0, None)
+
 
 class GeneralizedLinearModel(PredictiveModel):
     def _pair_with_coefficients(self, pair1, pair2):
@@ -37,7 +38,6 @@ class GeneralizedLinearModel(PredictiveModel):
         paired_list.sort(key=lambda x: x[1], reverse=True)
 
         return paired_list
-
 
     def score(self, input_dict):
 
@@ -79,35 +79,58 @@ class LinearRegressionModel(GeneralizedLinearModel):
         return sum(coefficients)
 
 
+class MultipleKeyedModels(PredictiveModel):
+    """Model based on key"""
 
-class BuildMultipleKeyedModel(object):
-    """Generate a keyed model"""
-    def __init__(self, keyed_models, key_map_func=None, keys=None, key_map=None):
+    def set_keyed_model(self, keyed_models_dict, key_map_func=None):
 
-        self.keyed_models = keyed_models
+        self.keyed_models_dict = keyed_models_dict
         self.key_map_func = key_map_func
 
-    def generate(self):
-        pass
+    def score(self, input_dict):
+
+        model_obj = self.map_func(input_dict)
+        return model_obj.score(input_dict)
 
 
-class MultipleKeyedModels(PredictiveModel):
-    pass
+class BuildMultipleKeyedModel(object):
+    """Generate a keyed model object"""
+    def __init__(self, keyed_models_dict, key_map_func=None, keys_to_map=None):
+
+        if keys_to_map is not None:
+            key_map_func = lambda input_dict: input_dict[keys_to_map]
+
+        self.keyed_models_dict = keyed_models_dict
+        self.key_map_func = key_map_func
+
+    def generate(self, parameters={}):
+        multi_key_obj = MultipleKeyedModels(parameters)
+        multi_key_obj.set_keyed_model(self.keyed_models_dict, self.key_map_func)
+        return multi_key_obj
 
 
 class HTTPRestModel(PredictiveModel):
+    """A base model that calls an HTTP response"""
 
     def _post_json_with_json_response(self, url, object_to_json):
-
         r_obj = requests.post(url, data=json.dumps(object_to_json))
         json_obj = r_obj.json()
         return json_obj
 
     def _get_with_json_response(self, url):
-
         r_obj = requests.get(url)
         json_obj = r_obj.json()
         return json_obj
+
+    def score(self, input_dict):
+        score_url = self.parameters["url"]
+        if "method" in self.parameters:
+            method = self.parameters["method"]
+        else:
+            method = "POST"
+
+        if method == "POST":
+            return self._post_json_with_json_response(score_url, input_dict)
 
 
 class OpenScoringRestModel(HTTPRestModel):
