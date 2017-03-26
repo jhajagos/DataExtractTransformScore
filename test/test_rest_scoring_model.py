@@ -4,7 +4,11 @@ import schema_define
 import json
 import sqlalchemy as sa
 import os
-import sys
+
+"""
+    For this test to work you need to have 'rest_scoring_test_server.py running on http://localhost:5000.
+    The server requires that you have installed flask and flask_rest installed.
+"""
 
 
 class TestRestModel(unittest.TestCase):
@@ -24,7 +28,7 @@ class TestRestModel(unittest.TestCase):
         if os.path.exists("./test_output.json"):
             os.remove("./test_output.json")
 
-    def test_create_and_run_custom_job(self):
+    def test_create_and_run_rest_job(self):
 
         with open("./test_pipeline_build_rest.json") as f:
             pipeline_structure = json.load(f)
