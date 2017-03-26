@@ -9,7 +9,8 @@ class ModelsRegistry(object):
     def __init__(self, model_name_class_tuples_list=None):
 
         hard_coded_model_name_class_tuples = [("Logistic regression", LogisticRegressionModel),
-                                              ("Linear regression", LinearRegressionModel)]
+                                              ("Linear regression", LinearRegressionModel),
+                                              ("HTTP REST Model", HTTPRestModel)]
 
         if model_name_class_tuples_list is None:
             model_name_class_tuples_list = hard_coded_model_name_class_tuples
@@ -113,7 +114,7 @@ class HTTPRestModel(PredictiveModel):
     """A base model that calls an HTTP response"""
 
     def _post_json_with_json_response(self, url, object_to_json):
-        r_obj = requests.post(url, data=json.dumps(object_to_json))
+        r_obj = requests.post(url, json=object_to_json)
         json_obj = r_obj.json()
         return json_obj
 
