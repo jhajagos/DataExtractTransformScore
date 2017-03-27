@@ -10,7 +10,9 @@ class ModelsRegistry(object):
 
         hard_coded_model_name_class_tuples = [("Logistic regression", LogisticRegressionModel),
                                               ("Linear regression", LinearRegressionModel),
-                                              ("HTTP REST Model", HTTPRestModel)]
+                                              ("HTTP REST Model", HTTPRestModel),
+                                              ("Openscoring REST Model", OpenScoringRestModel)
+                                              ]
 
         if model_name_class_tuples_list is None:
             model_name_class_tuples_list = hard_coded_model_name_class_tuples
@@ -135,4 +137,20 @@ class HTTPRestModel(PredictiveModel):
 
 
 class OpenScoringRestModel(HTTPRestModel):
-    pass
+    def score(self, input_dict):
+
+        # TODO: Still debugging this against a sample file
+
+        # input_dict[u"Y"] = 0
+
+        openscoring_model_url = self.parameters["url"]
+        model_details = self._get_with_json_response(openscoring_model_url)
+
+        request_struct = {"id": "test1", "arguments": input_dict}
+        # print(request_struct)
+        model_response = self._post_json_with_json_response(openscoring_model_url, request_struct)
+        # print(model_response)
+
+        return (model_response, model_details)
+
+

@@ -8,17 +8,17 @@
       <Value value="0"/>
       <Value value="1"/>
     </DataField>
-    <DataField dataType="double" name="length_of_stay" optype="continuous"/>
+    <DataField dataType="double" name="Expected_Mortality" optype="continuous"/>
   </DataDictionary>
-  <RegressionModel normalizationMethod="softmax" algorithmName="logisticRegression" functionName="regression" modelName="LOS_Model" targetFieldName="length_of_stay">
+  <RegressionModel algorithmName="logisticRegression" functionName="classification" modelName="LogisticModel" normalizationMethod="softmax" targetFieldName="Expected_Mortality">
     <MiningSchema>
       <MiningField name="X"/>
       <MiningField name="Y"/>
-      <MiningField name="length_of_stay" usageType="predicted"/>
+      <MiningField name="Expected_Mortality" usageType="predicted"/>
     </MiningSchema>
-    <RegressionTable intercept="-6.141">
-      <NumericPredictor coefficient="0.769" exponent="1" name="X"/>
-      <NumericPredictor coefficient="0.528" exponent="1" name="Y"/>
+    <RegressionTable intercept="-5.0">
+      <NumericPredictor coefficient="1.0" exponent="1" name="X"/>
+      <NumericPredictor coefficient="0.5" exponent="1" name="Y"/>
     </RegressionTable>
   </RegressionModel>
 </PMML>
