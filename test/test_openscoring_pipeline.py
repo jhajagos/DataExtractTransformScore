@@ -1,8 +1,15 @@
 import unittest
+import requests
+
+class TestOpenScoringPipeline(unittest.TestCase):
+
+    def setUp(self):
+
+        pass
 
 
-class MyTestCase(unittest.TestCase):
-    def test_something(self):
+
+    def test_open_scoring_pipeline(self):
         self.assertEqual(True, False)
 
 

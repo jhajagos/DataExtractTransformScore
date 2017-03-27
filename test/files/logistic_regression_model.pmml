@@ -1,0 +1,24 @@
+<PMML version="4.2" xmlns="http://www.dmg.org/PMML-4_2">
+  <DataDictionary numberOfFields="3">
+    <DataField dataType="integer" name="X" optype="categorical">
+      <Value value="0"/>
+      <Value value="1"/>
+    </DataField>
+    <DataField dataType="integer" name="Y" optype="categorical">
+      <Value value="0"/>
+      <Value value="1"/>
+    </DataField>
+    <DataField dataType="double" name="length_of_stay" optype="continuous"/>
+  </DataDictionary>
+  <RegressionModel normalizationMethod="softmax" algorithmName="logisticRegression" functionName="regression" modelName="LOS_Model" targetFieldName="length_of_stay">
+    <MiningSchema>
+      <MiningField name="X"/>
+      <MiningField name="Y"/>
+      <MiningField name="length_of_stay" usageType="predicted"/>
+    </MiningSchema>
+    <RegressionTable intercept="-6.141">
+      <NumericPredictor coefficient="0.769" exponent="1" name="X"/>
+      <NumericPredictor coefficient="0.528" exponent="1" name="Y"/>
+    </RegressionTable>
+  </RegressionModel>
+</PMML>
