@@ -6,8 +6,11 @@ import sqlalchemy as sa
 import os
 import requests
 
+
 class TestOpenScoringPipeline(unittest.TestCase):
-    "Test using a model deployed to the OpenScoring REST API. See: https://github.com/openscoring/openscoring"
+    """Test using a model deployed to the OpenScoring REST API. 
+        See: https://github.com/openscoring/openscoring" """
+
     def setUp(self):
 
         r = requests.put("http://localhost:8080/openscoring/model/test_logistic_regression_model",

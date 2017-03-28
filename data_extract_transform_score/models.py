@@ -1,6 +1,5 @@
 import math
 import requests
-import json
 
 
 class ModelsRegistry(object):
@@ -11,8 +10,7 @@ class ModelsRegistry(object):
         hard_coded_model_name_class_tuples = [("Logistic regression", LogisticRegressionModel),
                                               ("Linear regression", LinearRegressionModel),
                                               ("HTTP REST Model", HTTPRestModel),
-                                              ("Openscoring REST Model", OpenScoringRestModel)
-                                              ]
+                                              ("Openscoring REST Model", OpenScoringRestModel)]
 
         if model_name_class_tuples_list is None:
             model_name_class_tuples_list = hard_coded_model_name_class_tuples
@@ -35,6 +33,7 @@ class PredictiveModel(object):
 
 
 class GeneralizedLinearModel(PredictiveModel):
+
     def _pair_with_coefficients(self, pair1, pair2):
 
         paired_list = [(pair1[i], pair2[i]) for i in range(len(pair1))]
@@ -73,17 +72,19 @@ class GeneralizedLinearModel(PredictiveModel):
 
 
 class LogisticRegressionModel(GeneralizedLinearModel):
+
     def _compute_score_using_model(self, coefficients):
         return math.exp(sum(coefficients)) / (1 + math.exp(sum(coefficients)))
 
 
 class LinearRegressionModel(GeneralizedLinearModel):
+
     def _compute_score_using_model(self, coefficients):
         return sum(coefficients)
 
 
 class MultipleKeyedModels(PredictiveModel):
-    """Model based on key"""
+    """Multi-model based on key"""
 
     def set_keyed_model(self, keyed_models_dict, key_map_func=None):
 
@@ -137,11 +138,9 @@ class HTTPRestModel(PredictiveModel):
 
 
 class OpenScoringRestModel(HTTPRestModel):
+    """Score against an OpenScoring API"""
+
     def score(self, input_dict):
-
-        # TODO: Still debugging this against a sample file
-
-        # input_dict[u"Y"] = 0
 
         openscoring_model_url = self.parameters["url"]
         model_details = self._get_with_json_response(openscoring_model_url)
@@ -151,6 +150,4 @@ class OpenScoringRestModel(HTTPRestModel):
         model_response = self._post_json_with_json_response(openscoring_model_url, request_struct)
         # print(model_response)
 
-        return (model_response, model_details)
-
-
+        return (model_response["result"], model_details)
