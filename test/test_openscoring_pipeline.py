@@ -11,7 +11,7 @@ class TestOpenScoringPipeline(unittest.TestCase):
     def setUp(self):
 
         r = requests.put("http://localhost:8080/openscoring/model/test_logistic_regression_model",
-                      data=open("./files/logistic_regression_model.pmml", "rb"), headers={"Content-type": "text/xml"})
+                         data=open("./files/logistic_regression_model.pmml", "rb"), headers={"Content-type": "text/xml"})
 
         with open("testing_config.json", "r") as f:
             config = json.load(f)
@@ -26,7 +26,6 @@ class TestOpenScoringPipeline(unittest.TestCase):
 
         if os.path.exists("./test_output.json"):
             os.remove("./test_output.json")
-
 
     def test_open_scoring_pipeline(self):
 
@@ -43,8 +42,9 @@ class TestOpenScoringPipeline(unittest.TestCase):
 
         jobs_obj.run_job()
 
-        self.assertEqual(True, False)
+        #TODO: Write test
 
+        self.assertEqual(True, False)
 
 if __name__ == '__main__':
     unittest.main()
