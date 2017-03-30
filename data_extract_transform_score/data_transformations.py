@@ -102,8 +102,8 @@ class ReadFileIntoDB(ClientServerDataTransformation):
     def run(self):
         if self.file_type == "csv":
 
-            file_name = os.path.abspath(os.path.join(self.file_directory, self.file_name))
-            with open(file_name) as f:
+            localized_file_name = os.path.abspath(os.path.join(self.file_directory, self.file_name))
+            with open(localized_file_name, "rb") as f:
                 csv_dict_reader = csv.DictReader(f)
                 i = 0
                 for row_dict in csv_dict_reader:
@@ -338,12 +338,15 @@ class WriteFile(ServerClientDataTransformation):
 
     def run(self):
         row_proxy = self._get_data_transformation_step_proxy(self.step_number)
+
+        localized_file_name = os.path.abspath(os.path.join(self.file_directory, self.file_name))
+
         result_list = []
         if self.file_type == "JSON":
 
             for row in row_proxy:
                 result_list += [row.data]
-            with open(self.file_name, "w") as fw:
+            with open(localized_file_name, "w") as fw:
                 json.dump(result_list, fw, sort_keys=True, indent=4, separators=(',', ': '))
 
         else:
