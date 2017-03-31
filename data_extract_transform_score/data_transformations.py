@@ -116,8 +116,21 @@ class ReadFileIntoDB(ClientServerDataTransformation):
             raise RuntimeError
 
 
+class SelectAndFilterBy(ServerServerDataTransformation):
+    """Filters and selects a JSONB data or meta_data element"""
+
+    def __init__(self, step_number, jsonb_select_criteria=None, jsonb_sql_filter_criteria=None, apply_to="data"):
+        self.step_number = step_number
+        self.jsonb_sql_filter_criteria = jsonb_sql_filter_criteria
+        self.jsonb_select_criteria = jsonb_select_criteria
+        self.apply_to = apply_to
+
+    def run(self):
+        pass
+
+
 class CoalesceData(ServerServerDataTransformation):
-    """Aggregate JSON in data by the common id"""
+    """Aggregate JSON in data by the common id into a list"""
 
     def __init__(self, step_number, field_name=None):
         self.step_number = step_number
@@ -164,7 +177,7 @@ class MergeData(ServerServerDataTransformation):
         self.step_number_pairs = step_number_pairs
 
     def _field_name_keyed(self, field_name, alias):
-        if  field_name is None:
+        if field_name is None:
             data_sql_bit = "%s.data" % alias
         else:
             data_sql_bit = "jsonb_insert('{}'::jsonb, '{%s}', %s.data)" % (field_name, alias)
