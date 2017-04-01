@@ -119,7 +119,9 @@ def create_and_populate_schema(connection, meta_data, drop_all=True):
                                       (3, "Coalesce"),
                                       (4, "Transform", None),
                                       (5, "Score", None),
-                                      (6, "Output", None)]
+                                      (6, "Output", None),
+                                      (7, "Filter by", None)
+                                     ]
 
     child_data_transform_child_classes_1 = [(10, "Load file", 1),
                                             (40, "Map with Dict", 4),

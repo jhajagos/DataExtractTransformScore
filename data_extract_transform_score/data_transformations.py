@@ -116,17 +116,32 @@ class ReadFileIntoDB(ClientServerDataTransformation):
             raise RuntimeError
 
 
-class SelectAndFilterBy(ServerServerDataTransformation):
+class FilterBy(ServerServerDataTransformation):
     """Filters and selects a JSONB data or meta_data element"""
 
-    def __init__(self, step_number, jsonb_select_criteria=None, jsonb_sql_filter_criteria=None, apply_to="data"):
+    def __init__(self, step_number, filter_criteria):
         self.step_number = step_number
-        self.jsonb_sql_filter_criteria = jsonb_sql_filter_criteria
-        self.jsonb_select_criteria = jsonb_select_criteria
-        self.apply_to = apply_to
+        self.filter_criteria = filter_criteria
 
     def run(self):
-        pass
+        schema_text = self._schema_name()
+
+        sql_statement = """
+        insert into %sdata_transformations (common_id, data, meta, created_at, pipeline_job_data_transformation_step_id)
+        select common_id, "data", meta,
+          cast(now() as timestamp) at time zone 'utc', :pipeline_job_data_transformation_step_id
+            from   %sdata_transformations dt 
+              join %spipeline_jobs_data_transformation_steps pjdts on pjdts.id = dt.pipeline_job_data_transformation_step_id
+              join %sdata_transformation_steps dts ON dts.id = pjdts.data_transformation_step_id
+              join %spipeline_jobs pj on pj.id = pjdts.pipeline_job_id
+              where dts.step_number = :step_number and pj.id = :pipeline_job_id
+                and (%s)                        
+            """ % (schema_text, schema_text, schema_text, schema_text, schema_text, self.filter_criteria)
+
+        self._sql_statement_execute(sql_statement, {"step_number": self.step_number,
+                                                    "pipeline_job_id": self.pipeline_job_id,
+                                                    "pipeline_job_data_transformation_step_id": self.pipeline_job_data_transformation_step_id
+                                                    })
 
 
 class CoalesceData(ServerServerDataTransformation):
@@ -259,7 +274,8 @@ class MapDataWithDict(ServerClientServerDataTransformation):
         self.step_number = step_number
 
         if json_file_name is not None:
-            with open(json_file_name, "r") as f:
+            local_json_file_name = os.path.abspath(os.path.join(self.file_directory, json_file_name))
+            with open(local_json_file_name, "r") as f:
                 self.mapping_rules = json.load(f)
         else:
             self.mapping_rules = mapping_rules
