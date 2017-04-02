@@ -268,45 +268,69 @@ from (
 
 class MapDataWithDict(ServerClientServerDataTransformation):
     """Create an indicator flag based on a look-up of a table"""
-    def __init__(self, fields_to_map, step_number, json_file_name=None, mapping_rules=None):
+    def __init__(self, fields_to_map, step_number, json_file_name=None, mapping_rules=None, mapped_data_field_name=None):
+
+        if fields_to_map.__class__ != [].__class__:
+            self.fields_to_map = [fields_to_map]
 
         self.fields_to_map = fields_to_map
         self.step_number = step_number
-
-        if json_file_name is not None:
-            local_json_file_name = os.path.abspath(os.path.join(self.file_directory, json_file_name))
-            with open(local_json_file_name, "r") as f:
-                self.mapping_rules = json.load(f)
-        else:
-            self.mapping_rules = mapping_rules
+        self.json_file_name = json_file_name
+        self.mapping_rules = mapping_rules
+        self.mapped_data_field_name = mapped_data_field_name
 
     def run(self):
+
+        if self.json_file_name is not None:
+            local_json_file_name = os.path.abspath(os.path.join(self.file_directory, self.json_file_name))
+            with open(local_json_file_name, "r") as f:
+                self.mapping_rules = json.load(f)
 
         result_proxy = self._get_data_transformation_step_proxy(self.step_number)
         for result in result_proxy:
 
             result_data = result.data
 
-            if self.fields_to_map[0] in result_data:
-                result_value = result_data[self.fields_to_map[0]]
-                result_mapped_dict = {}
-                meta_list = []
-                # TODO: Clean up
+            i = 1
+            for field_to_map in self.fields_to_map:
+                if field_to_map not in result_data and i < len(self.fields_to_map):
+                    break
+                else:
 
-                if result_value.__class__ == [].__class__:
-                    for element in result_value:
-                        if element.__class__ == {}.__class__:
-                            field_key = self.fields_to_map[1]
-                            if field_key in element:
-                                field_value = element[field_key]
-                                if field_value in self.mapping_rules:
-                                    result_mapped_dict[self.mapping_rules[field_value]] = 1
-                                    meta_list += [{field_value: self.mapping_rules[field_value]}]
+                    if i == len(self.fields_to_map):
+                        data_list = []
+                        meta_list = []
 
-                self._write_data(result_mapped_dict, result.common_id, meta_list)
+                        if result_data.__class__ == [].__class__:
+                            result_value = result_data
+                        else:
+                            result_value = [result_data]
 
-            else:
-                pass
+                        for element in result_value:
+
+                            if element.__class__ == {}.__class__:
+                                field_key = field_to_map
+                                if field_key in element:
+                                    field_value = element[field_key]
+                                    if field_value in self.mapping_rules:
+
+                                        if self.mapping_rules[field_value].__class__ == [].__class__:
+                                            mapped_value = self.mapping_rules[field_value]
+                                            if mapped_value.__class__ != [].__class__:
+                                                mapped_value = list(mapped_value)
+                                            data_list += mapped_value
+                                            meta_list += [{field_value: self.mapping_rules[field_value]}]
+
+                        if self.mapped_data_field_name is not None:
+                            data = {self.mapped_data_field_name: data_list}
+                        else:
+                            data = data_list
+
+                        self._write_data(data, result.common_id, meta_list)
+
+                    if i < len(self.fields_to_map):
+                        result_data = result_data[field_to_map]
+                    i += 1
 
 
 class TransformDataWithFunction(ServerClientServerDataTransformation):
@@ -377,6 +401,5 @@ class WriteFile(ServerClientDataTransformation):
                 result_list += [row.data]
             with open(localized_file_name, "w") as fw:
                 json.dump(result_list, fw, sort_keys=True, indent=4, separators=(',', ': '))
-
         else:
             raise RuntimeError
