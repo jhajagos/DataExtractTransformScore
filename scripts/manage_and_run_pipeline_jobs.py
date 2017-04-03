@@ -52,17 +52,22 @@ def load_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict):
 
     connection, meta_data = get_db_connection(config_dict)
 
+    trans = connection.begin()
+
     with open(pipeline_json_filename) as f:
         pipeline_struct = json.load(f)
 
-    pipeline_obj = Pipeline(pipeline_name, connection, meta_data)
+    try:
+        pipeline_obj = Pipeline(pipeline_name, connection, meta_data)
+        pipeline_obj.load_steps_into_db(pipeline_struct)
+        print("Loaded: '%s'" % pipeline_name)
+        trans.commit()
+    except:
+        trans.rollback()
+        raise
 
-    pipeline_obj.load_steps_into_db(pipeline_struct)
 
-    print("Loaded: '%s'" % pipeline_name)
-
-
-def run_pipeline(pipeline_name, config_dict):
+def run_pipeline(pipeline_name, config_dict, with_rollback=False):
     connection, meta_data = get_db_connection(config_dict)
 
     if "root_file_path" in config_dict:
@@ -76,10 +81,22 @@ def run_pipeline(pipeline_name, config_dict):
 
     job_name = "Job_" + str(random.randint(1, 10000))
 
-    jobs_obj = Jobs(job_name, connection, meta_data, root_file_path)
-    jobs_obj.create_jobs_to_run(pipeline_name)
+    trans = connection.begin()
+    try:
 
-    jobs_obj.run_job()
+        jobs_obj = Jobs(job_name, connection, meta_data, root_file_path)
+        jobs_obj.create_jobs_to_run(pipeline_name)
+
+        jobs_obj.run_job()
+
+        trans.commit()
+    except:
+        if with_rollback:
+            trans.rollback()
+        else:
+            trans.commit()
+
+        raise
 
     print("Ran job: '%s' against pipeline: '%s'" % (job_name, pipeline_name))
 
@@ -106,6 +123,9 @@ def main():
     arg_parse_obj.add_argument("-d", "--drop-all-tables", action="store_true", default=False,
                                dest="drop_all_tables",
                                help="Drop all tables in schema")
+
+    arg_parse_obj.add_argument("--debug-mode", action="store_true", dest="debug_mode", default=False,
+                               help="Disables rollback of transactions")
 
     arg_parse_obj.add_argument("-r", "--run-pipeline", action="store_true", help="Run pipeline")
 
@@ -136,7 +156,7 @@ def main():
             elif arg_obj.pipeline_json_filename:
                 load_pipeline_json_file(arg_obj.pipeline_json_filename, pipeline_name, config_dict)
             elif arg_obj.run_pipeline:
-                run_pipeline(pipeline_name, config_dict)
+                run_pipeline(pipeline_name, config_dict, with_rollback=arg_obj.debug_mode)
 
         else:
             raise RuntimeError, "Pipeline name must be provided"
