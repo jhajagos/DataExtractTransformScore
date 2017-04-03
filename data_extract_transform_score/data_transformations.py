@@ -9,7 +9,7 @@ import os
 
 
 class DataTransformation(object):
-    """Base class for representing a data transformation89jhuuu*/"""
+    """Base class for representing a data transformation"""
 
     def run(self):
         pass
@@ -119,16 +119,22 @@ class ReadFileIntoDB(ClientServerDataTransformation):
 class FilterBy(ServerServerDataTransformation):
     """Filters and selects a JSONB data or meta_data element"""
 
-    def __init__(self, step_number, filter_criteria):
+    def __init__(self, step_number, filter_criteria, field_name=None):
         self.step_number = step_number
         self.filter_criteria = filter_criteria
+        self.field_name = field_name
 
     def run(self):
         schema_text = self._schema_name()
 
+        if self.field_name is None:
+            data_sql_bit = '"data"'
+        else:
+            data_sql_bit = """jsonb_insert('{}'::jsonb, '{%s}', "data")""" % self.field_name
+
         sql_statement = """
         insert into %sdata_transformations (common_id, data, meta, created_at, pipeline_job_data_transformation_step_id)
-        select common_id, "data", meta,
+        select common_id, %s, meta,
           cast(now() as timestamp) at time zone 'utc', :pipeline_job_data_transformation_step_id
             from   %sdata_transformations dt 
               join %spipeline_jobs_data_transformation_steps pjdts on pjdts.id = dt.pipeline_job_data_transformation_step_id
@@ -136,7 +142,7 @@ class FilterBy(ServerServerDataTransformation):
               join %spipeline_jobs pj on pj.id = pjdts.pipeline_job_id
               where dts.step_number = :step_number and pj.id = :pipeline_job_id
                 and (%s)                        
-            """ % (schema_text, schema_text, schema_text, schema_text, schema_text, self.filter_criteria)
+            """ % (schema_text, data_sql_bit, schema_text, schema_text, schema_text, schema_text, self.filter_criteria)
 
         self._sql_statement_execute(sql_statement, {"step_number": self.step_number,
                                                     "pipeline_job_id": self.pipeline_job_id,
@@ -268,7 +274,7 @@ from (
 
 class MapDataWithDict(ServerClientServerDataTransformation):
     """Create an indicator flag based on a look-up of a table"""
-    def __init__(self, fields_to_map, step_number, json_file_name=None, mapping_rules=None, mapped_data_field_name=None):
+    def __init__(self, fields_to_map, step_number, json_file_name=None, mapping_rules=None, field_name=None):
 
         if fields_to_map.__class__ != [].__class__:
             self.fields_to_map = [fields_to_map]
@@ -277,7 +283,7 @@ class MapDataWithDict(ServerClientServerDataTransformation):
         self.step_number = step_number
         self.json_file_name = json_file_name
         self.mapping_rules = mapping_rules
-        self.mapped_data_field_name = mapped_data_field_name
+        self.field_name = field_name
 
     def run(self):
 
@@ -321,8 +327,8 @@ class MapDataWithDict(ServerClientServerDataTransformation):
                                             data_list += mapped_value
                                             meta_list += [{field_value: self.mapping_rules[field_value]}]
 
-                        if self.mapped_data_field_name is not None:
-                            data = {self.mapped_data_field_name: data_list}
+                        if self.field_name is not None:
+                            data = {self.field_name: data_list}
                         else:
                             data = data_list
 
