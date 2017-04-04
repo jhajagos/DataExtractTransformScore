@@ -316,16 +316,21 @@ class MapDataWithDict(ServerClientServerDataTransformation):
 
                             if element.__class__ == {}.__class__:
                                 field_key = field_to_map
+
                                 if field_key in element:
                                     field_value = element[field_key]
+
                                     if field_value in self.mapping_rules:
 
-                                        if self.mapping_rules[field_value].__class__ == [].__class__:
+                                        if self.mapping_rules[field_value].__class__ in ([].__class__, u"".__class__, {}.__class__):
                                             mapped_value = self.mapping_rules[field_value]
+
                                             if mapped_value.__class__ != [].__class__:
-                                                mapped_value = list(mapped_value)
+                                                mapped_value = [mapped_value]
+
                                             data_list += mapped_value
                                             meta_list += [{field_value: self.mapping_rules[field_value]}]
+
 
                         if self.field_name is not None:
                             data = {self.field_name: data_list}
