@@ -83,36 +83,6 @@ class LinearRegressionModel(GeneralizedLinearModel):
         return sum(coefficients)
 
 
-class MultipleKeyedModels(PredictiveModel):
-    """Multi-model based on key"""
-
-    def set_keyed_model(self, keyed_models_dict, key_map_func=None):
-
-        self.keyed_models_dict = keyed_models_dict
-        self.key_map_func = key_map_func
-
-    def score(self, input_dict):
-
-        model_obj = self.map_func(input_dict)
-        return model_obj.score(input_dict)
-
-
-class BuildMultipleKeyedModel(object):
-    """Generate a keyed model object"""
-    def __init__(self, keyed_models_dict, key_map_func=None, keys_to_map=None):
-
-        if keys_to_map is not None:
-            key_map_func = lambda input_dict: input_dict[keys_to_map]
-
-        self.keyed_models_dict = keyed_models_dict
-        self.key_map_func = key_map_func
-
-    def generate(self, parameters={}):
-        multi_key_obj = MultipleKeyedModels(parameters)
-        multi_key_obj.set_keyed_model(self.keyed_models_dict, self.key_map_func)
-        return multi_key_obj
-
-
 class HTTPRestModel(PredictiveModel):
     """A base model that calls an HTTP response"""
 
