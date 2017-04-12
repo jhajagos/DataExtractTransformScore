@@ -182,6 +182,30 @@ select common_id, %s, jsonb_agg(dt.meta order by dt.id) as meta,
                                                     "pipeline_job_data_transformation_step_id": self.pipeline_job_data_transformation_step_id
                                                     })
 
+class SwapMetaToData(ServerServerDataTransformation):
+    def __init__(self, step_number):
+        self.step_number = step_number
+
+    def run(self):
+        schema_text = self._schema_name()
+
+        sql_statement = """
+                insert into %sdata_transformations (common_id, data, meta, created_at, pipeline_job_data_transformation_step_id)
+                select common_id, meta, NULL,
+                  cast(now() as timestamp) at time zone 'utc', :pipeline_job_data_transformation_step_id
+                    from   %sdata_transformations dt 
+                      join %spipeline_jobs_data_transformation_steps pjdts on pjdts.id = dt.pipeline_job_data_transformation_step_id
+                      join %sdata_transformation_steps dts ON dts.id = pjdts.data_transformation_step_id
+                      join %spipeline_jobs pj on pj.id = pjdts.pipeline_job_id
+                      where dts.step_number = :step_number and pj.id = :pipeline_job_id
+                                          
+                    """ % (
+        schema_text, schema_text, schema_text, schema_text, schema_text)
+
+        self._sql_statement_execute(sql_statement, {"step_number": self.step_number,
+                                                    "pipeline_job_id": self.pipeline_job_id,
+                                                    "pipeline_job_data_transformation_step_id": self.pipeline_job_data_transformation_step_id
+                                                    })
 
 class MergeData(ServerServerDataTransformation):
     """Merge JSON in data by the common id. Assumption here is the common_id field is unique"""

@@ -22,6 +22,7 @@ class DataTransformationStepClasses(object):
         self._register("Write file", dt.WriteFile)
         self._register("Transform with function", dt.TransformDataWithFunction)
         self._register("Filter by", dt.FilterBy)
+        self._register("Swap metadata to data", dt.SwapMetaToData)
 
     def _register(self, data_transformation_step_class_name, class_obj):
         self.step_class_callable_obj_dict[data_transformation_step_class_name] = class_obj
