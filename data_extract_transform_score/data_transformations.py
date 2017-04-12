@@ -331,7 +331,6 @@ class MapDataWithDict(ServerClientServerDataTransformation):
                                             data_list += mapped_value
                                             meta_list += [{field_value: self.mapping_rules[field_value]}]
 
-
                         if self.field_name is not None:
                             data = {self.field_name: data_list}
                         else:
