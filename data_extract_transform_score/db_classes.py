@@ -123,8 +123,6 @@ class PipelineJob(DBClass):
     def find_by_job_id_and_pipeline_id(self, job_id, pipeline_id):
         sql_expr = self.table_obj.select().where(and_(self.table_obj.c.pipeline_id == pipeline_id, self.table_obj.c.job_id == job_id))
 
-
-        print(sql_expr)
         cursor = self.connection.execute(sql_expr)
 
         return list(cursor)[0]
