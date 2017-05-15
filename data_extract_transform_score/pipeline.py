@@ -23,6 +23,7 @@ class DataTransformationStepClasses(object):
         self._register("Transform with function", dt.TransformDataWithFunction)
         self._register("Filter by", dt.FilterBy)
         self._register("Swap metadata to data", dt.SwapMetaToData)
+        self._register("Transform indicator list to dict", dt.TransformIndicatorListToDict)
 
     def _register(self, data_transformation_step_class_name, class_obj):
         self.step_class_callable_obj_dict[data_transformation_step_class_name] = class_obj
@@ -130,6 +131,7 @@ class Jobs(object):
             pipeline_id = pipeline_obj.get_id()
 
             pjd_row_obj = pipeline_job_obj.find_by_job_id_and_pipeline_id(self.job_id, pipeline_id)
+
             pipeline_job_obj.update_struct(pjd_row_obj.id, {"job_status_id": start_obj.get_id()})
             data_transform_step_objects = data_transformation_step_obj.find_by_pipeline_id(pipeline_id)
 

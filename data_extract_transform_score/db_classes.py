@@ -1,3 +1,5 @@
+from sqlalchemy import and_
+
 class DBClass(object):
     """Base Class for a PostgreSQL table in a schema"""
     def __init__(self, connection, meta_data):
@@ -119,10 +121,12 @@ class PipelineJob(DBClass):
         return "pipeline_jobs"
 
     def find_by_job_id_and_pipeline_id(self, job_id, pipeline_id):
-        sql_expr = self.table_obj.select().where(self.table_obj.c.pipeline_id == pipeline_id
-                                                 and self.table_obj.c.job_id == job_id)
+        sql_expr = self.table_obj.select().where(and_(self.table_obj.c.pipeline_id == pipeline_id, self.table_obj.c.job_id == job_id))
 
+
+        print(sql_expr)
         cursor = self.connection.execute(sql_expr)
+
         return list(cursor)[0]
 
 

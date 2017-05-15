@@ -296,6 +296,22 @@ from (
                                                              })
 
 
+class TransformIndicatorListToDict(ServerClientServerDataTransformation):
+    def __init__(self, step_number):
+        self.step_number = step_number
+
+    def run(self):
+        result_proxy = self._get_data_transformation_step_proxy(self.step_number)
+        for result in result_proxy:
+
+            indicator_dict = {}
+            for indicator in result.data:
+                indicator_dict[indicator] = 1.0
+
+            self._write_data(indicator_dict, result.common_id, None)
+
+
+
 class MapDataWithDict(ServerClientServerDataTransformation):
     """Create an indicator flag based on a look-up of a table"""
     def __init__(self, fields_to_map, step_number, json_file_name=None, mapping_rules=None, field_name=None):

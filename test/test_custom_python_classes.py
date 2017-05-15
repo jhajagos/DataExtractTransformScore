@@ -40,6 +40,34 @@ class TestUpdateWithCustomClasses(unittest.TestCase):
 
         jobs_obj.run_job()
 
+    def test_and_run_multiple_pipeline_jobs(self):
+
+        with open("./test_pipeline_build_custom.json") as f:
+            pipeline_structure = json.load(f)
+
+        pipeline_name = "test custom pipeline"
+        sys.path.insert(0, self.config["local_pipeline_import_path"][pipeline_name])
+
+        pipeline_obj = pipeline.Pipeline(pipeline_name, self.connection, self.meta_data)
+        pipeline_obj.load_steps_into_db(pipeline_structure)
+
+        jobs_obj1 = pipeline.Jobs("Test custom job", self.connection, self.meta_data)
+        jobs_obj1.create_jobs_to_run("test custom pipeline")
+
+        jobs_obj1.run_job()
+
+        with open("test_output_custom.json", "r") as f:
+            output1 = json.load(f)
+
+        jobs_obj2 = pipeline.Jobs("Test custom job", self.connection, self.meta_data)
+        jobs_obj2.create_jobs_to_run("test custom pipeline")
+
+        jobs_obj2.run_job()
+
+        with open("test_output_custom.json", "r") as f:
+            output2 = json.load(f)
+
+        self.assertEqual(len(output1), len(output2))
 
 if __name__ == '__main__':
     unittest.main()

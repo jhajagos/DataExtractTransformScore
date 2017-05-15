@@ -12,12 +12,14 @@ LOCAL_MODELS_TO_REGISTER = [("Log-linear regression", LogLinearRegressionModel)]
 
 
 def lower_case(data):
-    new_dict = {}
 
     for key in data:
-        new_dict[key.lower()] = data[key]
 
-    return (new_dict, {"original": data})
+        for element in data[key]:
+            if "code" in element:
+                element["code"] = element["code"].lower()
+
+    return (data, None)
 
 # Add new custom transformations
 LOCAL_TRANSFORMATIONS_TO_REGISTER = [("lower_case", lower_case)]
