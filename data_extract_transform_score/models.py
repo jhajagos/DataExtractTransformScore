@@ -82,6 +82,15 @@ class LinearRegressionModel(GeneralizedLinearModel):
     def _compute_score_using_model(self, coefficients):
         return sum(coefficients)
 
+class LnLinearRegressionModelWithCorrection(GeneralizedLinearModel):
+    """Natural logarithm correction factor"""
+
+    def set_correction_factor(self, correction_factor=1.0):
+        self.correction_factor = correction_factor
+
+    def _compute_score_using_model(self, coefficients):
+        return math.exp(sum(coefficients)) * self.correction_factor
+
 
 class HTTPRestModel(PredictiveModel):
     """A base model that calls an HTTP response"""
