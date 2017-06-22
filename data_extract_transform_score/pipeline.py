@@ -154,6 +154,8 @@ class Jobs(object):
 
                 data_step_class_name = dt_step_class_item.name
 
+                print("Running step %s: '%s'" % (data_transform_step.step_number, data_transform_step.name))
+
                 data_step_class = self.data_trans_step_classes_obj.get_by_class_name(data_step_class_name)
                 data_step_class_obj = data_step_class(**parameters) # Call with parameters from function
                 data_step_class_obj.set_connection_and_meta_data(self.connection, self.meta_data) # Set DB connection

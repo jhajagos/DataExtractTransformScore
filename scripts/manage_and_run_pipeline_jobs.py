@@ -67,7 +67,7 @@ def load_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict):
         raise
 
 
-def run_pipeline(pipeline_name, config_dict, with_rollback=False):
+def run_pipeline(pipeline_name, config_dict, with_transaction_rollback=False, with_transactions=True):
     connection, meta_data = get_db_connection(config_dict)
 
     if "root_file_path" in config_dict:
@@ -81,22 +81,28 @@ def run_pipeline(pipeline_name, config_dict, with_rollback=False):
 
     job_name = "Job_" + str(random.randint(1, 10000))
 
-    trans = connection.begin()
-    try:
+    if with_transactions:
+        trans = connection.begin()
+        try:
 
+            jobs_obj = Jobs(job_name, connection, meta_data, root_file_path)
+            jobs_obj.create_jobs_to_run(pipeline_name)
+
+            jobs_obj.run_job()
+
+            trans.commit()
+        except:
+            if with_transaction_rollback:
+                trans.rollback()
+            else:
+                trans.commit()
+
+            raise
+    else:
+        print("Running in batch mode")
         jobs_obj = Jobs(job_name, connection, meta_data, root_file_path)
         jobs_obj.create_jobs_to_run(pipeline_name)
-
         jobs_obj.run_job()
-
-        trans.commit()
-    except:
-        if with_rollback:
-            trans.rollback()
-        else:
-            trans.commit()
-
-        raise
 
     print("Ran job: '%s' against pipeline: '%s'" % (job_name, pipeline_name))
 
@@ -127,6 +133,8 @@ def main():
     arg_parse_obj.add_argument("--debug-mode", action="store_true", dest="debug_mode", default=False,
                                help="Disables rollback of transactions")
 
+    arg_parse_obj.add_argument("--batch-mode", action="store_false", dest="batch_mode", default=True, help="For running in batch mode")
+
     arg_parse_obj.add_argument("-r", "--run-pipeline", action="store_true", help="Run pipeline")
 
     arg_obj = arg_parse_obj.parse_args()
@@ -156,7 +164,7 @@ def main():
             elif arg_obj.pipeline_json_filename:
                 load_pipeline_json_file(arg_obj.pipeline_json_filename, pipeline_name, config_dict)
             elif arg_obj.run_pipeline:
-                run_pipeline(pipeline_name, config_dict, with_rollback=arg_obj.debug_mode)
+                run_pipeline(pipeline_name, config_dict, with_transaction_rollback=arg_obj.debug_mode, with_transactions=arg_obj.batch_mode)
 
         else:
             raise RuntimeError, "Pipeline name must be provided"
