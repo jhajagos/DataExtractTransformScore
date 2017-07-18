@@ -176,13 +176,14 @@ select common_id, %s, jsonb_agg(dt.meta order by dt.id) as meta,
     where step_number = :step_number and pjdts.pipeline_job_id = :pipeline_job_id
     group by dt.common_id order by common_id""" % (schema_text, data_sql_bit, schema_text, schema_text, schema_text)
 
-
         self._sql_statement_execute(sql_statement, {"step_number": self.step_number,
                                                     "pipeline_job_id": self.pipeline_job_id,
                                                     "pipeline_job_data_transformation_step_id": self.pipeline_job_data_transformation_step_id
                                                     })
 
+
 class SwapMetaToData(ServerServerDataTransformation):
+    """Take metadata values and swap to data values"""
     def __init__(self, step_number):
         self.step_number = step_number
 
@@ -431,7 +432,7 @@ class ScoreData(ServerClientServerDataTransformation):
 
 
 class WriteFile(ServerClientDataTransformation):
-    """To the client database"""
+    """Write file to client filesystem from the server database"""
 
     def __init__(self, step_number, file_name, file_type, fields_to_export=None):
         self.step_number = step_number
