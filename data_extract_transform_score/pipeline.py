@@ -112,7 +112,7 @@ class Jobs(object):
 
             pipeline_job_obj.insert_struct(pipeline_obj_dict)
 
-    def run_job(self):
+    def run_job(self, with_transaction_rollback=False):
         """Execute the job"""
 
         data_transformation_step_obj = DataTransformationStep(self.connection, self.meta_data)
@@ -137,39 +137,53 @@ class Jobs(object):
 
             for data_transform_step in data_transform_step_objects:
 
-                pipeline_job_data_trans_step_dict = {"data_transformation_step_id": data_transform_step.id,
-                                                     "pipeline_job_id": pjd_row_obj.id,
-                                                     "job_status_id": start_obj.get_id(),
-                                                     "start_date_time": datetime.datetime.utcnow(),
-                                                     "is_active": True}
+                transaction = self.connection.begin()
 
-                self.job_obj.update_struct(self.job_id, {"job_status_id": start_obj.get_id()})
+                try: # Transactions occur at the individual data transformation step
 
-                pipeline_job_data_transformation_step_id = pipeline_job_data_trans_obj.insert_struct(pipeline_job_data_trans_step_dict)
+                    pipeline_job_data_trans_step_dict = {"data_transformation_step_id": data_transform_step.id,
+                                                         "pipeline_job_id": pjd_row_obj.id,
+                                                         "job_status_id": start_obj.get_id(),
+                                                         "start_date_time": datetime.datetime.utcnow(),
+                                                         "is_active": True}
 
-                # Run method registered for data step class
+                    self.job_obj.update_struct(self.job_id, {"job_status_id": start_obj.get_id()})
 
-                parameters = data_transform_step.parameters
-                dt_step_class_item = data_transformation_step_class_obj.find_by_id(data_transform_step.data_transformation_step_class_id)
+                    pipeline_job_data_transformation_step_id = pipeline_job_data_trans_obj.insert_struct(pipeline_job_data_trans_step_dict)
 
-                data_step_class_name = dt_step_class_item.name
+                    # Run methods registered for data step class
 
-                print("Running step %s: '%s'" % (data_transform_step.step_number, data_transform_step.name))
+                    parameters = data_transform_step.parameters
+                    dt_step_class_item = data_transformation_step_class_obj.find_by_id(data_transform_step.data_transformation_step_class_id)
 
-                data_step_class = self.data_trans_step_classes_obj.get_by_class_name(data_step_class_name)
-                data_step_class_obj = data_step_class(**parameters) # Call with parameters from function
-                data_step_class_obj.set_connection_and_meta_data(self.connection, self.meta_data) # Set DB connection
-                data_step_class_obj.set_pipeline_job_data_transformation_id(pipeline_job_data_transformation_step_id)
-                data_step_class_obj.set_file_directory(self.file_directory)
+                    data_step_class_name = dt_step_class_item.name
 
-                data_step_class_obj.run()
+                    print("Running step %s: '%s'" % (data_transform_step.step_number, data_transform_step.name))
 
-                # Update job information associated with completion
+                    data_step_class = self.data_trans_step_classes_obj.get_by_class_name(data_step_class_name)
+                    data_step_class_obj = data_step_class(**parameters) # Call with parameters from function
+                    data_step_class_obj.set_connection_and_meta_data(self.connection, self.meta_data) # Set DB connection
+                    data_step_class_obj.set_pipeline_job_data_transformation_id(pipeline_job_data_transformation_step_id)
+                    data_step_class_obj.set_file_directory(self.file_directory)
 
-                pipeline_job_data_trans_obj.update_struct(pipeline_job_data_transformation_step_id,
-                                                          {"end_date_time": datetime.datetime.utcnow(),
-                                                           "job_status_id":  finished_obj.get_id(),
-                                                           "is_active": False})
+                    data_step_class_obj.run()
+
+                    # Update job information associated with completion
+
+                    pipeline_job_data_trans_obj.update_struct(pipeline_job_data_transformation_step_id,
+                                                              {"end_date_time": datetime.datetime.utcnow(),
+                                                               "job_status_id":  finished_obj.get_id(),
+                                                               "is_active": False})
+
+                    transaction.commit()
+
+                except:
+                    if with_transaction_rollback:
+                        transaction.rollback()
+                    else:
+                        transaction.commit()
+
+                    raise
 
             pipeline_job_obj.update_struct(pjd_row_obj.id, {"end_date_time": datetime.datetime.utcnow(),
                                                             "job_status_id":  finished_obj.get_id(),

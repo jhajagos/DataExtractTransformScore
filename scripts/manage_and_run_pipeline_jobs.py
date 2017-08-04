@@ -67,7 +67,7 @@ def load_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict):
         raise
 
 
-def run_pipeline(pipeline_name, config_dict, with_transaction_rollback=False, with_transactions=True):
+def run_pipeline(pipeline_name, config_dict, with_transaction_rollback=False):
     connection, meta_data = get_db_connection(config_dict)
 
     if "root_file_path" in config_dict:
@@ -81,34 +81,16 @@ def run_pipeline(pipeline_name, config_dict, with_transaction_rollback=False, wi
 
     job_name = "Job_" + str(random.randint(1, 10000))
 
-    if with_transactions:
-        trans = connection.begin()
-        try:
+    jobs_obj = Jobs(job_name, connection, meta_data, root_file_path)
+    jobs_obj.create_jobs_to_run(pipeline_name)
 
-            jobs_obj = Jobs(job_name, connection, meta_data, root_file_path)
-            jobs_obj.create_jobs_to_run(pipeline_name)
-
-            jobs_obj.run_job()
-
-            trans.commit()
-        except:
-            if with_transaction_rollback:
-                trans.rollback()
-            else:
-                trans.commit()
-
-            raise
-    else:
-        print("Running in batch mode")
-        jobs_obj = Jobs(job_name, connection, meta_data, root_file_path)
-        jobs_obj.create_jobs_to_run(pipeline_name)
-        jobs_obj.run_job()
+    jobs_obj.run_job(with_transaction_rollback)
 
     print("Ran job: '%s' against pipeline: '%s'" % (job_name, pipeline_name))
 
 
 def main():
-    arg_parse_obj = argparse.ArgumentParser(description='Create, manage, and run data extract and pipelines')
+    arg_parse_obj = argparse.ArgumentParser(description='Load, manage, and run data extraction and scoring pipelines')
     arg_parse_obj.add_argument("-c", "--config-json-filename", dest="config_json_filename",
                                help="JSON configuration file: see 'config.json.example'", default="./config.json")
 
@@ -132,8 +114,6 @@ def main():
 
     arg_parse_obj.add_argument("--debug-mode", action="store_true", dest="debug_mode", default=False,
                                help="Disables rollback of transactions")
-
-    arg_parse_obj.add_argument("--batch-mode", action="store_false", dest="batch_mode", default=True, help="For running in batch mode")
 
     arg_parse_obj.add_argument("-r", "--run-pipeline", action="store_true", help="Run pipeline")
 
@@ -164,7 +144,7 @@ def main():
             elif arg_obj.pipeline_json_filename:
                 load_pipeline_json_file(arg_obj.pipeline_json_filename, pipeline_name, config_dict)
             elif arg_obj.run_pipeline:
-                run_pipeline(pipeline_name, config_dict, with_transaction_rollback=arg_obj.debug_mode, with_transactions=arg_obj.batch_mode)
+                run_pipeline(pipeline_name, config_dict, with_transaction_rollback=arg_obj.debug_mode)
 
         else:
             raise RuntimeError, "Pipeline name must be provided"

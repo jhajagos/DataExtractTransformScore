@@ -209,7 +209,8 @@ class SwapMetaToData(ServerServerDataTransformation):
                                                     })
 
 class MergeData(ServerServerDataTransformation):
-    """Merge JSON in data by the common id. Assumption here is the common_id field is unique"""
+    """Merge JSON in data by the common id.
+    Assumption here is the common_id field is unique"""
 
     def __init__(self, step_numbers):
 
