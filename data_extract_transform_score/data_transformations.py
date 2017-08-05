@@ -382,6 +382,7 @@ class MapDataWithDict(ServerClientServerDataTransformation):
 
                     if i < len(self.fields_to_map):
                         result_data = result_data[field_to_map]
+
                     i += 1
 
 
