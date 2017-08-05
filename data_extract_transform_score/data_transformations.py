@@ -381,12 +381,9 @@ class MapDataWithDict(ServerClientServerDataTransformation):
                         self._write_data(data, result.common_id, meta_list)
 
                     elif i < len(self.fields_to_map):
-                        if field_to_map in result_data:
-                            if result_data.__class__ != u"".__class__:
-                                result_data = result_data[field_to_map]
-                            else:
-                                break
-                        else:
+                        try:
+                            result_data = result_data[field_to_map]
+                        except TypeError:
                             break
                     i += 1
 
