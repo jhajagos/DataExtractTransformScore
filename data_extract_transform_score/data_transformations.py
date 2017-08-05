@@ -382,7 +382,10 @@ class MapDataWithDict(ServerClientServerDataTransformation):
 
                     elif i < len(self.fields_to_map):
                         if field_to_map in result_data:
-                            result_data = result_data[field_to_map]
+                            if result_data.__class__ != u"".__class__:
+                                result_data = result_data[field_to_map]
+                            else:
+                                break
                         else:
                             break
                     i += 1
