@@ -321,7 +321,7 @@ class MapDataWithDict(ServerClientServerDataTransformation):
         if fields_to_map.__class__ != [].__class__:
             self.fields_to_map = [fields_to_map]
 
-        self.fields_to_map = fields_to_map
+        self.fields_to_map = fields_to_map # Can be a list of fields to descend into
         self.step_number = step_number
         self.json_file_name = json_file_name
         self.mapping_rules = mapping_rules
@@ -340,7 +340,7 @@ class MapDataWithDict(ServerClientServerDataTransformation):
             result_data = result.data
 
             i = 1
-            for field_to_map in self.fields_to_map:
+            for field_to_map in self.fields_to_map:  # Traverse down to the field
                 if field_to_map not in result_data and i < len(self.fields_to_map):
                     break
                 else:
@@ -380,9 +380,11 @@ class MapDataWithDict(ServerClientServerDataTransformation):
 
                         self._write_data(data, result.common_id, meta_list)
 
-                    if i < len(self.fields_to_map):
-                        result_data = result_data[field_to_map]
-
+                    elif i < len(self.fields_to_map):
+                        if field_to_map in result_data:
+                            result_data = result_data[field_to_map]
+                        else:
+                            break
                     i += 1
 
 
