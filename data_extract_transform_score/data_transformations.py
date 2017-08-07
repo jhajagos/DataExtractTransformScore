@@ -100,20 +100,31 @@ class ReadFileIntoDB(ClientServerDataTransformation):
         self.delimiter = delimiter
 
     def run(self):
-        if self.file_type == "csv":
 
-            localized_file_name = os.path.abspath(os.path.join(self.file_directory, self.file_name))
-            with open(localized_file_name, "rb") as f:
-                csv_dict_reader = csv.DictReader(f)
-                i = 0
-                for row_dict in csv_dict_reader:
-                    common_id = row_dict[self.common_id_field_name]
-                    data = row_dict
-                    meta = {"row": i}
-                    self._write_data(data, common_id, meta=meta)
-                    i += 1
-        else:
-            raise RuntimeError
+        transaction = self.connection.begin() # For data loading faster to have a single transaction
+
+        try:
+
+            if self.file_type == "csv":
+
+                localized_file_name = os.path.abspath(os.path.join(self.file_directory, self.file_name))
+                with open(localized_file_name, "rb") as f:
+                    csv_dict_reader = csv.DictReader(f)
+                    i = 0
+                    for row_dict in csv_dict_reader:
+                        common_id = row_dict[self.common_id_field_name]
+                        data = row_dict
+                        meta = {"row": i}
+                        self._write_data(data, common_id, meta=meta)
+                        i += 1
+            else:
+                raise RuntimeError
+
+        except:
+            transaction.rollback()
+            raise
+
+        transaction.commit()
 
 
 class FilterBy(ServerServerDataTransformation):
@@ -188,6 +199,7 @@ class SwapMetaToData(ServerServerDataTransformation):
         self.step_number = step_number
 
     def run(self):
+
         schema_text = self._schema_name()
 
         sql_statement = """
@@ -207,6 +219,7 @@ class SwapMetaToData(ServerServerDataTransformation):
                                                     "pipeline_job_id": self.pipeline_job_id,
                                                     "pipeline_job_data_transformation_step_id": self.pipeline_job_data_transformation_step_id
                                                     })
+
 
 class MergeData(ServerServerDataTransformation):
     """Merge JSON in data by the common id.
@@ -232,6 +245,8 @@ class MergeData(ServerServerDataTransformation):
         return data_sql_bit
 
     def run(self):
+
+
         schema = self._schema_name()
 
         step_number_1, field_name_1 = self.step_number_pairs[0]
@@ -267,6 +282,8 @@ from (
         if len(self.step_number_pairs) > 2:
 
             for step_number_pair in self.step_number_pairs[2:]:
+
+
                 step_number_2, field_name_2 = step_number_pair
                 field_name_expanded_2 = self._field_name_keyed(field_name_2, "dt2")
 
@@ -303,15 +320,23 @@ class TransformIndicatorListToDict(ServerClientServerDataTransformation):
         self.step_number = step_number
 
     def run(self):
-        result_proxy = self._get_data_transformation_step_proxy(self.step_number)
-        for result in result_proxy:
 
-            indicator_dict = {}
-            for indicator in result.data:
-                indicator_dict[indicator] = 1.0
+        transaction = self.connection.begin()
+        try:
+            result_proxy = self._get_data_transformation_step_proxy(self.step_number)
+            for result in result_proxy:
 
-            self._write_data(indicator_dict, result.common_id, None)
+                indicator_dict = {}
+                for indicator in result.data:
+                    indicator_dict[indicator] = 1.0
 
+                self._write_data(indicator_dict, result.common_id, None)
+
+        except:
+            transaction.rollback()
+            raise
+
+        transaction.commit()
 
 
 class MapDataWithDict(ServerClientServerDataTransformation):
@@ -329,63 +354,71 @@ class MapDataWithDict(ServerClientServerDataTransformation):
 
     def run(self):
 
-        if self.json_file_name is not None:
-            local_json_file_name = os.path.abspath(os.path.join(self.file_directory, self.json_file_name))
-            with open(local_json_file_name, "r") as f:
-                self.mapping_rules = json.load(f)
+        transaction = self.connection.begin()
 
-        result_proxy = self._get_data_transformation_step_proxy(self.step_number)
-        for result in result_proxy:
+        try:
+            if self.json_file_name is not None:
+                local_json_file_name = os.path.abspath(os.path.join(self.file_directory, self.json_file_name))
+                with open(local_json_file_name, "r") as f:
+                    self.mapping_rules = json.load(f)
 
-            result_data = result.data
+            result_proxy = self._get_data_transformation_step_proxy(self.step_number)
+            for result in result_proxy:
 
-            i = 1
-            for field_to_map in self.fields_to_map:  # Traverse down to the field
-                if field_to_map not in result_data and i < len(self.fields_to_map):
-                    break
-                else:
+                result_data = result.data
 
-                    if i == len(self.fields_to_map):
-                        data_list = []
-                        meta_list = []
+                i = 1
+                for field_to_map in self.fields_to_map:  # Traverse down to the field
+                    if field_to_map not in result_data and i < len(self.fields_to_map):
+                        break
+                    else:
 
-                        if result_data.__class__ == [].__class__:
-                            result_value = result_data
-                        else:
-                            result_value = [result_data]
+                        if i == len(self.fields_to_map):
+                            data_list = []
+                            meta_list = []
 
-                        for element in result_value:
+                            if result_data.__class__ == [].__class__:
+                                result_value = result_data
+                            else:
+                                result_value = [result_data]
 
-                            if element.__class__ == {}.__class__:
-                                field_key = field_to_map
+                            for element in result_value:
 
-                                if field_key in element:
-                                    field_value = element[field_key]
+                                if element.__class__ == {}.__class__:
+                                    field_key = field_to_map
 
-                                    if field_value in self.mapping_rules:
+                                    if field_key in element:
+                                        field_value = element[field_key]
 
-                                        if self.mapping_rules[field_value].__class__ in ([].__class__, u"".__class__, {}.__class__):
-                                            mapped_value = self.mapping_rules[field_value]
+                                        if field_value in self.mapping_rules:
 
-                                            if mapped_value.__class__ != [].__class__:
-                                                mapped_value = [mapped_value]
+                                            if self.mapping_rules[field_value].__class__ in ([].__class__, u"".__class__, {}.__class__):
+                                                mapped_value = self.mapping_rules[field_value]
 
-                                            data_list += mapped_value
-                                            meta_list += [{field_value: self.mapping_rules[field_value]}]
+                                                if mapped_value.__class__ != [].__class__:
+                                                    mapped_value = [mapped_value]
 
-                        if self.field_name is not None:
-                            data = {self.field_name: data_list}
-                        else:
-                            data = data_list
+                                                data_list += mapped_value
+                                                meta_list += [{field_value: self.mapping_rules[field_value]}]
 
-                        self._write_data(data, result.common_id, meta_list)
+                            if self.field_name is not None:
+                                data = {self.field_name: data_list}
+                            else:
+                                data = data_list
 
-                    elif i < len(self.fields_to_map):
-                        try:
-                            result_data = result_data[field_to_map]
-                        except TypeError:
-                            break
-                    i += 1
+                            self._write_data(data, result.common_id, meta_list)
+
+                        elif i < len(self.fields_to_map):
+                            try:
+                                result_data = result_data[field_to_map]
+                            except TypeError:
+                                break
+                        i += 1
+        except:
+            transaction.rollback()
+            raise
+
+        transaction.commit()
 
 
 class TransformDataWithFunction(ServerClientServerDataTransformation):
@@ -401,12 +434,21 @@ class TransformDataWithFunction(ServerClientServerDataTransformation):
         self.transformation_func = self.transformation_registry.transformation_name_dict[transformation_name]
 
     def run(self):
-        row_proxy = self._get_data_transformation_step_proxy(self.step_number)
-        for row_obj in row_proxy:
-            data, meta = self.transformation_func(row_obj.data)
-            # print(data, meta)
-            # raise RuntimeError
-            self._write_data(data, row_obj.common_id, meta)
+
+        transaction = self.connection.begin()
+        try:
+
+            row_proxy = self._get_data_transformation_step_proxy(self.step_number)
+            for row_obj in row_proxy:
+                data, meta = self.transformation_func(row_obj.data)
+                # print(data, meta)
+                # raise RuntimeError
+                self._write_data(data, row_obj.common_id, meta)
+        except:
+            transaction.rollback()
+            raise
+
+        transaction.commit()
 
 
 class ScoreData(ServerClientServerDataTransformation):
@@ -428,11 +470,21 @@ class ScoreData(ServerClientServerDataTransformation):
         self.model_obj = self.model(model_parameters)
 
     def run(self):
-        row_proxy = self._get_data_transformation_step_proxy(self.step_number)
-        for row_obj in row_proxy:
-            score_result, meta = self.model_obj.score(row_obj.data)
-            meta["model name"] = self.model_name
-            self._write_data({"score": score_result}, row_obj.common_id, meta)
+
+        transaction = self.connection.begin()
+
+        try:
+            row_proxy = self._get_data_transformation_step_proxy(self.step_number)
+            for row_obj in row_proxy:
+                score_result, meta = self.model_obj.score(row_obj.data)
+                meta["model name"] = self.model_name
+                self._write_data({"score": score_result}, row_obj.common_id, meta)
+
+        except:
+            transaction.rollback()
+            raise
+
+        transaction.commit()
 
 
 class WriteFile(ServerClientDataTransformation):
@@ -445,6 +497,7 @@ class WriteFile(ServerClientDataTransformation):
         self.fields_to_export = fields_to_export
 
     def run(self):
+
         row_proxy = self._get_data_transformation_step_proxy(self.step_number)
 
         localized_file_name = os.path.abspath(os.path.join(self.file_directory, self.file_name))
@@ -458,3 +511,4 @@ class WriteFile(ServerClientDataTransformation):
                 json.dump(result_list, fw, sort_keys=True, indent=4, separators=(',', ': '))
         else:
             raise RuntimeError
+
