@@ -110,13 +110,18 @@ class ReadFileIntoDB(ClientServerDataTransformation):
                 localized_file_name = os.path.abspath(os.path.join(self.file_directory, self.file_name))
                 with open(localized_file_name, "rb") as f:
                     csv_dict_reader = csv.DictReader(f)
-                    i = 0
+                    i = 1
                     for row_dict in csv_dict_reader:
                         common_id = row_dict[self.common_id_field_name]
                         data = row_dict
                         meta = {"row": i}
                         self._write_data(data, common_id, meta=meta)
+
+                        if i % 10000 == 0:
+                            print("    " + "Imported %s rows into DB" % i)
+
                         i += 1
+
             else:
                 raise RuntimeError
 
@@ -246,7 +251,6 @@ class MergeData(ServerServerDataTransformation):
 
     def run(self):
 
-
         schema = self._schema_name()
 
         step_number_1, field_name_1 = self.step_number_pairs[0]
@@ -254,6 +258,8 @@ class MergeData(ServerServerDataTransformation):
 
         field_name_expanded_1 = self._field_name_keyed(field_name_1, "dt1")
         field_name_expanded_2 = self._field_name_keyed(field_name_2, "dt2")
+
+        print("    " + "Joining steps %s, %s" % (step_number_1, step_number_2))
 
         sql_statement = """
 insert into %sdata_transformations (common_id, data, meta, created_at, pipeline_job_data_transformation_step_id)
@@ -273,19 +279,27 @@ from (
     on t1.common_id = t2.common_id
         """ % (schema, field_name_expanded_1, schema, schema, schema, field_name_expanded_2, schema, schema, schema)
 
-        self._sql_statement_execute(sql_statement, {"step_number_1": step_number_1,
+        transaction = self.connection.begin()
+        try:
+            self._sql_statement_execute(sql_statement, {"step_number_1": step_number_1,
                                                     "step_number_2":  step_number_2,
                                                     "pipeline_job_id": self.pipeline_job_id,
                                                     "pipeline_job_data_transformation_step_id": self.pipeline_job_data_transformation_step_id
                                                     })
+        except:
+            transaction.rollback()
+            raise
+
+        transaction.commit()
 
         if len(self.step_number_pairs) > 2:
 
             for step_number_pair in self.step_number_pairs[2:]:
 
-
                 step_number_2, field_name_2 = step_number_pair
                 field_name_expanded_2 = self._field_name_keyed(field_name_2, "dt2")
+
+                print("    " + "Joining step %s" % (step_number_2,))
 
                 sql_expression = """
                 update %sdata_transformations as dtp
@@ -309,10 +323,19 @@ from (
                 on t2.common_id = t1.common_id where dtp.id = t1.id
                 """ % (schema, schema, schema, schema, field_name_expanded_2, schema, schema, schema)
 
-                self._sql_statement_execute(sql_expression, {"pipeline_job_id": self.pipeline_job_id,
-                                                             "step_number_2": step_number_2,
-                                                             "current_step_number": self.data_transformation_step_row.step_number
-                                                             })
+                transaction = self.connection.begin()
+
+                try:
+
+                    self._sql_statement_execute(sql_expression, {"pipeline_job_id": self.pipeline_job_id,
+                                                                 "step_number_2": step_number_2,
+                                                                 "current_step_number": self.data_transformation_step_row.step_number
+                                                                 })
+                except:
+                    transaction.rollback()
+                    raise
+
+                transaction.commit()
 
 
 class TransformIndicatorListToDict(ServerClientServerDataTransformation):
@@ -413,6 +436,7 @@ class MapDataWithDict(ServerClientServerDataTransformation):
                                 result_data = result_data[field_to_map]
                             except TypeError:
                                 break
+
                         i += 1
         except:
             transaction.rollback()
