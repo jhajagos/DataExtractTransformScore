@@ -64,6 +64,11 @@ class Pipeline(DBClassName):
         for data_step_dict in self.raw_db_pipeline_structure:
             data_transformation_steps_obj.insert_struct(data_step_dict)
 
+    def rename_pipeline(self, new_name):
+
+        update_struct = {"name": new_name}
+        self.update_struct(self.get_id(), update_struct)
+
     def _table_name(self):
         return "pipelines"
 

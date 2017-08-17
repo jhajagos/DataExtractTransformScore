@@ -48,6 +48,22 @@ def print_pipeline_steps(pipeline_name, config_dict):
     pass
 
 
+def archive_job_by_job_name(job_name, config_dict, step_numbers=None):
+    pass
+
+
+def archive_job_by_pipeline_name(pipeline_nae, config_dict, step_numbers=None):
+    pass
+
+
+def rename_pipeline(old_pipeline_name, new_pipeline, config_dict):
+    pass
+
+
+def list_jobs_run(pipeline_name, config_dict):
+    pass
+
+
 def load_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict):
 
     connection, meta_data = get_db_connection(config_dict)
