@@ -179,8 +179,6 @@ class Jobs(object):
                                                            "job_status_id":  finished_obj.get_id(),
                                                            "is_active": False})
 
-
-
             pipeline_job_obj.update_struct(pjd_row_obj.id, {"end_date_time": datetime.datetime.utcnow(),
                                                             "job_status_id":  finished_obj.get_id(),
                                                             "is_active": False})
@@ -189,3 +187,25 @@ class Jobs(object):
                                                  "job_status_id":  finished_obj.get_id(),
                                                   "is_active": False,
                                                   "is_latest": True})
+
+
+class ArchivePipeline(object):
+
+    """Moves and deletes untwanted steps run piplelines """
+
+    def __init__(self, pipeline_name, connection, meta_data):
+
+        self.pipeline_name = pipeline_name
+        self.connection = connection
+        self.metadata = meta_data
+
+        Pipeline(pipeline_name, self.connection, self.metadata)
+
+    def _get_associated_jobs(self):
+        return []
+
+    def _get_associated_pipelne_jobs(self):
+        return []
+
+    def archive_steps(self, steps):
+        pass

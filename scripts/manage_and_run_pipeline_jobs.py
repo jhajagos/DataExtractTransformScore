@@ -5,6 +5,7 @@ import json
 import sqlalchemy as sa
 import random
 import sys
+import time
 
 try:
     import data_extract_transform_score as dets
@@ -30,7 +31,7 @@ def get_db_connection(config_dict, reflect_db=True):
     return connection, meta_data
 
 
-def list_available_pipelines(config_dict):
+def print_pipelines(config_dict):
     connection, meta_data = get_db_connection(config_dict)
     cursor = connection.execute("select * from %s.pipelines" % meta_data.schema)
     list_of_pipelines = list(cursor)
@@ -45,7 +46,17 @@ def initialize_database_schema(config_dict, drop_all_tables=False):
 
 
 def print_pipeline_steps(pipeline_name, config_dict):
-    pass
+    connection, meta_data = get_db_connection(config_dict)
+    pipeline_obj = Pipeline(pipeline_name, connection, meta_data)
+    pipeline_id = pipeline_obj.get_id()
+
+    cursor = connection.execute(
+        "select * from %s.data_transformation_steps where pipeline_id = %s" % (meta_data.schema, pipeline_id))
+    print("Steps in %s" % pipeline_name)
+
+    steps = [(r.step_number, r.name) for r in cursor]
+    for step in steps:
+        print("  " + str(step))
 
 
 def archive_job_by_job_name(job_name, config_dict, step_numbers=None):
@@ -56,8 +67,10 @@ def archive_job_by_pipeline_name(pipeline_nae, config_dict, step_numbers=None):
     pass
 
 
-def rename_pipeline(old_pipeline_name, new_pipeline, config_dict):
-    pass
+def rename_pipeline(old_pipeline_name, new_pipeline_name, config_dict):
+    connection, meta_data = get_db_connection(config_dict)
+    pipeline_obj = Pipeline(old_pipeline_name, connection, meta_data)
+    pipeline_obj.rename_pipeline(new_pipeline_name)
 
 
 def list_jobs_run(pipeline_name, config_dict):
@@ -81,6 +94,16 @@ def load_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict):
     except:
         trans.rollback()
         raise
+
+
+def update_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict):
+    time_stamp = time.strftime("%Y%m%d_%H%M%S")
+    update_pipeline_name = pipeline_name + "_" + time_stamp
+
+    print("Renaming old pipeline as '%s'" % update_pipeline_name)
+
+    rename_pipeline(pipeline_name, update_pipeline_name, config_dict)
+    load_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict)
 
 
 def run_pipeline(pipeline_name, config_dict, with_transaction_rollback=False):
@@ -114,10 +137,10 @@ def main():
 
     arg_parse_obj.add_argument("-n", "--pipeline-name", dest="pipeline_name", help="Set name of the pipeline")
 
-    arg_parse_obj.add_argument("-l", "--list-available-pipelines", dest="list_available_pipelines",
+    arg_parse_obj.add_argument("-l", "--list-pipelines", dest="list_pipelines",
                                action="store_true", default=False, help="List name of pipelines that are currently loaded")
 
-    arg_parse_obj.add_argument("-s", "--print-pipeline-steps", dest="print_pipeline_steps", default=False,
+    arg_parse_obj.add_argument("-s", "--list-pipeline-steps", dest="list_pipeline_steps", default=False,
                                action="store_true", help="")
 
     arg_parse_obj.add_argument("-i", "--initialize-database-schema", action="store_true", default=False,
@@ -127,6 +150,11 @@ def main():
     arg_parse_obj.add_argument("-d", "--drop-all-tables", action="store_true", default=False,
                                dest="drop_all_tables",
                                help="Drop all tables in schema")
+
+    arg_parse_obj.add_argument("-u", "--update-pipeline", action="store_true", default=False,
+                                  dest="update_pipeline",
+                                  help="Update a pipeline renames currently"
+                                  )
 
     arg_parse_obj.add_argument("--debug-mode", action="store_true", dest="debug_mode", default=False,
                                help="Disables rollback of transactions")
@@ -143,22 +171,26 @@ def main():
     with open(config_json_filename, "r") as f:
         config_dict = json.load(f)
 
-    if arg_obj.list_available_pipelines:
-        list_available_pipelines(config_dict)
+    if arg_obj.list_pipelines:
+        print_pipelines(config_dict)
         return True
     
     if arg_obj.initialize_database_schema:
         initialize_database_schema(config_dict, arg_obj.drop_all_tables)
         return True
 
-    if arg_obj.print_pipeline_steps or arg_obj.run_pipeline or arg_obj.pipeline_json_filename:
+    if arg_obj.list_pipeline_steps or arg_obj.run_pipeline or arg_obj.pipeline_json_filename:
         pipeline_name = arg_obj.pipeline_name
         if pipeline_name:
-            if arg_obj.print_pipeline_steps:
+            if arg_obj.list_pipeline_steps:
                 print_pipeline_steps(pipeline_name, config_dict)
                 return True
             elif arg_obj.pipeline_json_filename:
-                load_pipeline_json_file(arg_obj.pipeline_json_filename, pipeline_name, config_dict)
+                pipeline_json_filename = arg_obj.pipeline_json_filename
+                if arg_obj.update_pipeline:
+                    update_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict)
+                else:
+                    load_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict)
             elif arg_obj.run_pipeline:
                 run_pipeline(pipeline_name, config_dict, with_transaction_rollback=arg_obj.debug_mode)
 

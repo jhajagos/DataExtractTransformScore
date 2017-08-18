@@ -57,7 +57,6 @@ class TestLoadPipeline(unittest.TestCase):
 
         self.assertEquals(2, len(pipeline_results))
 
-
     def test_create_and_run_multiple_jobs(self):
 
         with open("./test_pipeline_build.json") as f:
@@ -78,6 +77,19 @@ class TestLoadPipeline(unittest.TestCase):
             pipeline_results = json.load(f)
 
         self.assertEquals(2, len(pipeline_results))
+
+    def test_archive_data_transformations(self):
+
+        with open("./test_pipeline_build.json") as f:
+            pipeline_structure = json.load(f)
+
+        pipeline_obj_1 = pipeline.Pipeline("test pipeline", self.connection, self.meta_data)
+        pipeline_obj_1.load_steps_into_db(pipeline_structure)
+
+        jobs_obj_1 = pipeline.Jobs("Test job", self.connection, self.meta_data)
+        jobs_obj_1.create_jobs_to_run("test pipeline")
+
+        jobs_obj_1.run_job()
 
 
 if __name__ == '__main__':

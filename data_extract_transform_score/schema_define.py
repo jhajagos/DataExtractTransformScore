@@ -58,7 +58,10 @@ def schema_define(meta_data):
                                                  Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False),
                                                  Column("start_date_time", DateTime),
                                                  Column("end_date_time", DateTime),
-                                                 Column("is_active", Boolean))
+                                                 Column("is_active", Boolean),
+                                                 Column("data_transformation_archived", Boolean, default=False),
+                                                 Column("data_transformation_deleted", Boolean, default=False)
+                                                )
 
     data_transformations = Table("data_transformations", meta_data,
                                  Column("id", Integer, primary_key=True),

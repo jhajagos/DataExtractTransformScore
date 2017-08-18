@@ -121,7 +121,6 @@ class ReadFileIntoDB(ClientServerDataTransformation):
                             print("    " + "Imported %s rows into DB" % i)
 
                         i += 1
-
             else:
                 raise RuntimeError
 
