@@ -59,22 +59,18 @@ def print_pipeline_steps(pipeline_name, config_dict):
         print("  " + str(step))
 
 
-def archive_job_by_job_name(job_name, config_dict, step_numbers=None):
-    pass
+def archive_pipeline(pipeline_name, config_dict, step_numbers=None):
 
-
-def archive_job_by_pipeline_name(pipeline_nae, config_dict, step_numbers=None):
-    pass
+    print("Archiving '%s'" % pipeline_name)
+    connection, meta_data = get_db_connection(config_dict)
+    ap = dets.pipeline.ArchivePipeline(pipeline_name, connection, meta_data)
+    ap.archive_steps(step_numbers)
 
 
 def rename_pipeline(old_pipeline_name, new_pipeline_name, config_dict):
     connection, meta_data = get_db_connection(config_dict)
     pipeline_obj = Pipeline(old_pipeline_name, connection, meta_data)
     pipeline_obj.rename_pipeline(new_pipeline_name)
-
-
-def list_jobs_run(pipeline_name, config_dict):
-    pass
 
 
 def load_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict):
@@ -153,8 +149,11 @@ def main():
 
     arg_parse_obj.add_argument("-u", "--update-pipeline", action="store_true", default=False,
                                   dest="update_pipeline",
-                                  help="Update a pipeline renames currently"
+                                  help="Update an existing name pipeline"
                                   )
+
+    arg_parse_obj.add_argument("-a", "--archive-pipeline", action="store_true", default=False,
+                               dest="archive_pipeline")
 
     arg_parse_obj.add_argument("--debug-mode", action="store_true", dest="debug_mode", default=False,
                                help="Disables rollback of transactions")
@@ -179,7 +178,7 @@ def main():
         initialize_database_schema(config_dict, arg_obj.drop_all_tables)
         return True
 
-    if arg_obj.list_pipeline_steps or arg_obj.run_pipeline or arg_obj.pipeline_json_filename:
+    if arg_obj.list_pipeline_steps or arg_obj.run_pipeline or arg_obj.pipeline_json_filename or arg_obj.archive_pipeline:
         pipeline_name = arg_obj.pipeline_name
         if pipeline_name:
             if arg_obj.list_pipeline_steps:
@@ -191,6 +190,8 @@ def main():
                     update_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict)
                 else:
                     load_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict)
+            elif arg_obj.archive_pipeline:
+                archive_pipeline(pipeline_name,config_dict)
             elif arg_obj.run_pipeline:
                 run_pipeline(pipeline_name, config_dict, with_transaction_rollback=arg_obj.debug_mode)
 

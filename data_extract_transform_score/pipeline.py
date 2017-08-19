@@ -142,13 +142,14 @@ class Jobs(object):
 
             for data_transform_step in data_transform_step_objects:
 
-
-
                 pipeline_job_data_trans_step_dict = {"data_transformation_step_id": data_transform_step.id,
                                                      "pipeline_job_id": pjd_row_obj.id,
                                                      "job_status_id": start_obj.get_id(),
                                                      "start_date_time": datetime.datetime.utcnow(),
-                                                     "is_active": True}
+                                                     "is_active": True,
+                                                     "data_transformations_deleted": False,
+                                                     "data_transformations_archived": False
+                                                     }
 
                 self.job_obj.update_struct(self.job_id, {"job_status_id": start_obj.get_id()})
 
@@ -190,8 +191,7 @@ class Jobs(object):
 
 
 class ArchivePipeline(object):
-
-    """Moves and deletes unwanted steps run piplelines """
+    """Archives and deletes unwanted data transformations"""
 
     def __init__(self, pipeline_name, connection, meta_data):
 
