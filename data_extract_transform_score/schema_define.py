@@ -41,7 +41,7 @@ def schema_define(meta_data):
 
     data_transformation_steps = Table("data_transformation_steps", meta_data,
                                       Column("id", Integer, primary_key=True),
-                                      Column("step_number", Integer, nullable=False),
+                                      Column("step_number", Integer, nullable=False, unique=True),
                                       Column("name", String(255)),
                                       Column("data_transformation_step_class_id",
                                              ForeignKey("data_transformation_step_classes.id")),
@@ -59,8 +59,8 @@ def schema_define(meta_data):
                                                  Column("start_date_time", DateTime),
                                                  Column("end_date_time", DateTime),
                                                  Column("is_active", Boolean),
-                                                 Column("data_transformation_archived", Boolean, default=False),
-                                                 Column("data_transformation_deleted", Boolean, default=False)
+                                                 Column("data_transformations_archived", Boolean, default=False),
+                                                 Column("data_transformations_deleted", Boolean, default=False)
                                                 )
 
     data_transformations = Table("data_transformations", meta_data,

@@ -191,21 +191,81 @@ class Jobs(object):
 
 class ArchivePipeline(object):
 
-    """Moves and deletes untwanted steps run piplelines """
+    """Moves and deletes unwanted steps run piplelines """
 
     def __init__(self, pipeline_name, connection, meta_data):
 
         self.pipeline_name = pipeline_name
         self.connection = connection
-        self.metadata = meta_data
+        self.meta_data = meta_data
 
-        Pipeline(pipeline_name, self.connection, self.metadata)
+        self.pipeline_obj = Pipeline(pipeline_name, self.connection, self.meta_data)
 
-    def _get_associated_jobs(self):
-        return []
+    def _get_associated_pipeline_jobs(self):
+        schema = self.meta_data.schema
+        query_string = """select pj.id as pipeline_job_id, pj.job_id 
+  from %s.pipeline_jobs pj 
+  join %s.jobs j on pj.job_id = j.id
+  join %s.pipelines p on pj.pipeline_id  = p.id
+  where p.id = %s""" % (schema, schema, schema, self.pipeline_obj.get_id())
 
-    def _get_associated_pipelne_jobs(self):
-        return []
+        return list(self.connection.execute(query_string))
 
-    def archive_steps(self, steps):
-        pass
+    def _get_associated_pipeline_data_steps(self):
+
+        pipeline_jobs_list = self._get_associated_pipeline_jobs()
+        pipeline_jobs_dict = {}
+
+        schema = self.meta_data.schema
+        for pipeline_job_item in pipeline_jobs_list:
+            dict_key = (pipeline_job_item.job_id, pipeline_job_item.pipeline_job_id)
+
+            query_string = """select pjdt.data_transformation_step_id, dts.step_number,
+    pjdt.id as pipeline_job_data_transformation_step_id
+  from %s.pipeline_jobs_data_transformation_steps pjdt 
+    join %s.job_statuses js on pjdt.job_status_id = js.id
+    join %s.data_transformation_steps dts on dts.id = pjdt.data_transformation_step_id
+      where js.name = 'Finished' and pjdt.pipeline_job_id = %s and (data_transformations_archived = FALSE and data_transformations_deleted = FALSE)
+            """ % (schema, schema, schema, pipeline_job_item.job_id)
+
+            cursor = self.connection.execute(query_string)
+            result_list = [(c.pipeline_job_data_transformation_step_id, c.data_transformation_step_id, c.step_number) for c in cursor]
+
+            pipeline_jobs_dict[dict_key] = result_list
+
+        return pipeline_jobs_dict
+
+    def archive_steps(self, steps=None):
+
+        pipeline_job_dict = self._get_associated_pipeline_data_steps()
+        schema = self.meta_data.schema
+
+        for job_tuple in pipeline_job_dict:
+            #job_id, pipeline_job_id = job_tuple
+
+            for dts in pipeline_job_dict[job_tuple]:
+                pipeline_job_data_transformation_step_id, data_transformation_id, step_number = dts
+
+                insert_query_string = """insert into %s.archived_data_transformations select dts.*, cast(now() as timestamp) at time zone 'utc' from %s.data_transformations dts 
+                                                        where dts.pipeline_job_data_transformation_step_id = %s""" % (
+                schema, schema, pipeline_job_data_transformation_step_id)
+
+                step_archived = False
+                if steps is None:
+                    self.connection.execute(insert_query_string)
+                    step_archived = True
+
+                elif step_number in steps:
+                    self.connection.execute(insert_query_string)
+                    step_archived = True
+
+                delete_query_string = """
+                delete from %s.data_transformations where pipeline_job_data_transformation_step_id = %s 
+                """ % (schema, pipeline_job_data_transformation_step_id)
+
+                self.connection.execute(delete_query_string)
+
+                pjdts_obj = PipelineJobDataTranformationStep(self.connection, self.meta_data)
+                pjdts_obj_id = pjdts_obj.find_by_id(pipeline_job_data_transformation_step_id)
+
+                pjdts_obj.update_struct(pjdts_obj_id.id, {"data_transformations_deleted": True, "data_transformations_archived": step_archived})

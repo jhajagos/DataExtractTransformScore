@@ -91,6 +91,35 @@ class TestLoadPipeline(unittest.TestCase):
 
         jobs_obj_1.run_job()
 
+        num_dts_1 = len(list(self.connection.execute("select * from %s.data_transformations dts" % (self.meta_data.schema,))))
+
+        ap_obj = pipeline.ArchivePipeline("test pipeline", self.connection, self.meta_data)
+        ap_obj.archive_steps()
+
+        num_dts_2 = len(list(self.connection.execute("select * from %s.data_transformations dts" % (self.meta_data.schema,))))
+
+        self.assertTrue(num_dts_1 > 0)
+        self.assertEquals(0, num_dts_2)
+
+        num_adts_2 = len(list(self.connection.execute("select * from %s.archived_data_transformations dts" % (self.meta_data.schema,))))
+
+        self.assertEquals(num_dts_1, num_adts_2)
+
+        jobs_obj_2 = pipeline.Jobs("Test job 2", self.connection, self.meta_data)
+        jobs_obj_2.create_jobs_to_run("test pipeline")
+        jobs_obj_2.run_job()
+
+        ap_obj2 = pipeline.ArchivePipeline("test pipeline", self.connection, self.meta_data)
+        ap_obj2.archive_steps(steps=[8])
+
+        num_dts_3 = len(list(self.connection.execute("select * from %s.data_transformations dts" % (self.meta_data.schema,))))
+        self.assertEquals(0, num_dts_3)
+
+        num_adts_3 = len(list(
+            self.connection.execute("select * from %s.archived_data_transformations dts" % (self.meta_data.schema,))))
+
+        self.assertEquals(15, num_adts_3)
+
 
 if __name__ == '__main__':
     unittest.main()
