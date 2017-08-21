@@ -41,14 +41,14 @@ def schema_define(meta_data):
 
     data_transformation_steps = Table("data_transformation_steps", meta_data,
                                       Column("id", Integer, primary_key=True),
-                                      Column("step_number", Integer, nullable=False, unique=True),
+                                      Column("step_number", Integer, nullable=False),
                                       Column("name", String(255)),
                                       Column("data_transformation_step_class_id",
                                              ForeignKey("data_transformation_step_classes.id")),
                                       Column("parameters", JSONB),
                                       Column("description", Text),
                                       Column("pipeline_id", ForeignKey("pipelines.id"), nullable=False),
-                                      UniqueConstraint('pipeline_id', "step_number", "name", name='idx_dts_pn')
+                                      UniqueConstraint('pipeline_id', "step_number", name='idx_dts_pn')
                                       )
 
     pipeline_jobs_data_transformation_steps = Table("pipeline_jobs_data_transformation_steps", meta_data,
