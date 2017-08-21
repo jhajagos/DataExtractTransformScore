@@ -48,7 +48,7 @@ def schema_define(meta_data):
                                       Column("parameters", JSONB),
                                       Column("description", Text),
                                       Column("pipeline_id", ForeignKey("pipelines.id"), nullable=False),
-                                      UniqueConstraint('pipeline_id', "step_number", name='idx_dts_pn')
+                                      UniqueConstraint('pipeline_id', "step_number", "name", name='idx_dts_pn')
                                       )
 
     pipeline_jobs_data_transformation_steps = Table("pipeline_jobs_data_transformation_steps", meta_data,
