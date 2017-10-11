@@ -35,6 +35,7 @@ def print_pipelines(config_dict):
     connection, meta_data = get_db_connection(config_dict)
     cursor = connection.execute("select * from %s.pipelines" % meta_data.schema)
     list_of_pipelines = list(cursor)
+    print('Pipelines in schema: "%s"' % (meta_data.schema, ))
     print([(r.id, r.name) for r in list_of_pipelines])
 
 
@@ -50,6 +51,8 @@ def print_pipeline_steps(pipeline_name, config_dict):
     pipeline_obj = Pipeline(pipeline_name, connection, meta_data)
     pipeline_id = pipeline_obj.get_id()
 
+    print('Pipeline in schema: "%s"' % (meta_data.schema,))
+
     cursor = connection.execute(
         "select * from %s.data_transformation_steps where pipeline_id = %s" % (meta_data.schema, pipeline_id))
     print("Steps in %s" % pipeline_name)
@@ -60,9 +63,9 @@ def print_pipeline_steps(pipeline_name, config_dict):
 
 
 def archive_pipeline(pipeline_name, config_dict, step_numbers=None):
-
-    print("Archiving '%s'" % pipeline_name)
     connection, meta_data = get_db_connection(config_dict)
+    print('Pipeline in schema: "%s"' % (meta_data.schema,))
+    print("Archiving '%s'" % pipeline_name)
     ap = dets.pipeline.ArchivePipeline(pipeline_name, connection, meta_data)
     ap.archive_steps(step_numbers)
 
