@@ -63,11 +63,18 @@ def print_pipeline_steps(pipeline_name, config_dict):
 
 
 def archive_pipeline(pipeline_name, config_dict, step_numbers=None):
+
+    if step_numbers is not None:
+        step_list = step_numbers.split(",")
+        step_list = [int(s) for s in step_list]
+    else:
+        step_list = None
+
     connection, meta_data = get_db_connection(config_dict)
     print('Pipeline in schema: "%s"' % (meta_data.schema,))
     print("Archiving '%s'" % pipeline_name)
     ap = dets.pipeline.ArchivePipeline(pipeline_name, connection, meta_data)
-    ap.archive_steps(step_numbers)
+    ap.archive_steps(step_list)
 
 
 def rename_pipeline(old_pipeline_name, new_pipeline_name, config_dict):
@@ -158,6 +165,8 @@ def main():
     arg_parse_obj.add_argument("-a", "--archive-pipeline", action="store_true", default=False,
                                dest="archive_pipeline")
 
+    arg_parse_obj.add_argument("--pipeline-step-number", default=None, dest="pipeline_step_number")
+
     arg_parse_obj.add_argument("--debug-mode", action="store_true", dest="debug_mode", default=False,
                                help="Disables rollback of transactions")
 
@@ -194,7 +203,7 @@ def main():
                 else:
                     load_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict)
             elif arg_obj.archive_pipeline:
-                archive_pipeline(pipeline_name,config_dict)
+                archive_pipeline(pipeline_name,config_dict, step_numbers=arg_obj.pipeline_step_number)
             elif arg_obj.run_pipeline:
                 run_pipeline(pipeline_name, config_dict, with_transaction_rollback=arg_obj.debug_mode)
 
