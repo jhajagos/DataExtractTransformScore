@@ -100,7 +100,7 @@ def main(pipeline_name, step_number, job_id, mongodb_import_format, config_json_
 
 if __name__ == "__main__":
 
-    arg_parse_obj = argparse.ArgumentParser(description='Load, manage, and run data extraction and scoring pipelines')
+    arg_parse_obj = argparse.ArgumentParser(description='Utility for exporting in pretty JSON or one line per record JSON for MongoDB')
 
     arg_parse_obj.add_argument("-c", "--config-json-filename", dest="config_json_filename",
                                help="JSON configuration file: see 'config.json.example'", default="./config.json")
@@ -117,7 +117,6 @@ if __name__ == "__main__":
     arg_parse_obj.add_argument("-d", "--directory", dest="directory", default=os.path.curdir)
 
     arg_obj = arg_parse_obj.parse_args()
-
 
     main(arg_obj.pipeline_name, arg_obj.step_number, arg_obj.job_id, arg_obj.mongodb_import_format,
          arg_obj.config_json_filename, arg_obj.directory)
