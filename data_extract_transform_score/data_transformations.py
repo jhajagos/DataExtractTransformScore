@@ -6,6 +6,7 @@ from sqlalchemy import text
 import models
 import json
 import os
+import sqlalchemy as sa
 
 
 class DataTransformation(object):
@@ -21,6 +22,13 @@ class DataTransformation(object):
 
     def set_file_directory(self, file_directory):
         self.file_directory = file_directory
+
+    def set_external_db_data_connections(self, external_data_connections_dict=None):
+
+        if external_data_connections_dict is not None:
+            self.external_data_connections_dict = external_data_connections_dict
+        else:
+            self.external_data_connections_dict = {}
 
     def set_pipeline_job_data_transformation_id(self, pipeline_job_data_transformation_id):
         """This method will be called by the JobRunner"""
@@ -126,9 +134,118 @@ class ReadFileIntoDB(ClientServerDataTransformation):
 
         except:
             transaction.rollback()
+            raise()
+
+        transaction.commit()
+
+
+class ReadFromExternalDB(ClientServerDataTransformation):
+    """Read data from an external datasource defined by an SQLAlchemy Connection String"""
+
+    def _connect_to_database(self, data_connection_name):
+
+        data_connection_dict = self.external_data_connections_dict[data_connection_name]
+        connection_string = data_connection_dict["connection_string"]
+
+        engine = sa.create_engine(connection_string)
+
+        return engine.connect()
+
+    def _execute_external_query(self, external_connection, query_string, parameter_dict={}):
+
+        result_set = external_connection.execute(sa.text(query_string), **parameter_dict)
+
+        return result_set
+
+    def _convert_row_to_json(self, row_data):
+        "Convert a database row to a JSON serializable structure"
+        row_dict = {}
+
+        for column in row_data.keys():
+            data_value = row_data[column]
+            if data_value.__class__  in (int, float):
+                row_dict[column] = data_value
+            else:
+                string_value = str(data_value)
+                if u"\u0000" in string_value:
+                   string_value = " ".join(string_value.split(u"\u0000"))
+                row_dict[column] = string_value.rstrip()
+
+        return row_dict
+
+
+class ReadDataFromExternalDBQuery(ReadFromExternalDB):
+    """Read data from a query where each db row"""
+
+    def __init__(self, external_data_connection_name, sql_query, common_id_field_name):
+        self.query_string = sql_query
+        self.external_data_connection_name = external_data_connection_name
+        self.common_id_field_name = common_id_field_name
+
+    def run(self):
+
+        connection = self._connect_to_database(self.external_data_connection_name)
+        result_set = self._execute_external_query(connection, self.query_string)
+
+        i = 1
+        transaction = self.connection.begin()
+        try:
+            for row_dict in result_set:
+                common_id = row_dict[self.common_id_field_name]
+                data = self._convert_row_to_json(row_dict)
+                meta = {"row": i}
+                self._write_data(data, common_id, meta=meta)
+
+                if i % 10000 == 0:
+                    print("    " + "Imported %s rows into DB" % i)
+
+                i += 1
+
+        except:
+            transaction.rollback()
             raise
 
         transaction.commit()
+
+
+
+
+class ReadDataFromExternalDBQueryById(ReadFromExternalDB):
+
+    def __init__(self, external_data_connection_name, sql_query, step_number):
+        self.query_string = sql_query
+        self.external_data_connection_name = external_data_connection_name
+        self.step_number = step_number
+
+    def run(self):
+
+        external_connection = self._connect_to_database(self.external_data_connection_name)
+
+        transaction = self.connection.begin()
+        try:
+
+            row_proxy = self._get_data_transformation_step_proxy(self.step_number)
+
+            i = 1
+            for row_obj in row_proxy:
+
+                external_row_result = self._execute_external_query(external_connection, self.query_string,
+                                                                   {"common_id": row_obj.common_id})
+
+                for external_row in external_row_result:
+
+                    data = self._convert_row_to_json(external_row)
+                    meta = {"row": i}
+                    self._write_data(data, row_obj.common_id, meta)
+
+                    i += 1
+
+        except:
+            transaction.rollback()
+            raise
+
+        transaction.commit()
+
 
 
 class FilterBy(ServerServerDataTransformation):

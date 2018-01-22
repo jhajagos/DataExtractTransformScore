@@ -24,6 +24,8 @@ class DataTransformationStepClasses(object):
         self._register("Filter by", dt.FilterBy)
         self._register("Swap metadata to data", dt.SwapMetaToData)
         self._register("Transform indicator list to dict", dt.TransformIndicatorListToDict)
+        self._register("Load from DB by query", dt.ReadDataFromExternalDBQuery)
+        self._register("Load from DB by id", dt.ReadDataFromExternalDBQueryById)
 
     def _register(self, data_transformation_step_class_name, class_obj):
         self.step_class_callable_obj_dict[data_transformation_step_class_name] = class_obj
@@ -76,7 +78,8 @@ class Pipeline(DBClassName):
 class Jobs(object):
     """Class for running and executing jobs"""
 
-    def __init__(self, name, connection, meta_data, file_directory="./"):
+    def __init__(self, name, connection, meta_data, file_directory="./",
+                 external_data_connections_dict=None):
         self.connection = connection
         self.meta_data = meta_data
         self.file_directory = file_directory
@@ -85,6 +88,7 @@ class Jobs(object):
         self.pipelines = []
         self.pipeline_jobs_ids = []
         self.name = name
+        self.external_data_connections_dict = external_data_connections_dict
 
         self.data_trans_step_classes_obj = DataTransformationStepClasses()
 
@@ -168,6 +172,9 @@ class Jobs(object):
                 data_step_class = self.data_trans_step_classes_obj.get_by_class_name(data_step_class_name)
                 data_step_class_obj = data_step_class(**parameters) # Call with parameters from function
                 data_step_class_obj.set_connection_and_meta_data(self.connection, self.meta_data)  # Set DB connection, metadata, and transaction
+
+                data_step_class_obj.set_external_db_data_connections(self.external_data_connections_dict)
+
                 data_step_class_obj.set_pipeline_job_data_transformation_id(pipeline_job_data_transformation_step_id)
                 data_step_class_obj.set_file_directory(self.file_directory)
 
