@@ -99,7 +99,7 @@ def load_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict):
         trans.commit()
     except:
         trans.rollback()
-        raise
+        raise()
 
 
 def update_pipeline_json_file(pipeline_json_filename, pipeline_name, config_dict):
@@ -126,7 +126,12 @@ def run_pipeline(pipeline_name, config_dict, with_transaction_rollback=False):
 
     job_name = "Job_" + str(random.randint(1, 10000))
 
-    jobs_obj = Jobs(job_name, connection, meta_data, root_file_path)
+    if "external_data_connections" in config_dict:
+        external_data_connections = config_dict["external_data_connections"]
+    else:
+        external_data_connections = {}
+
+    jobs_obj = Jobs(job_name, connection, meta_data, root_file_path, external_data_connections=external_data_connections)
     jobs_obj.create_jobs_to_run(pipeline_name)
 
     jobs_obj.run_job(with_transaction_rollback)
