@@ -203,7 +203,7 @@ class ReadDataFromExternalDBQuery(ReadFromExternalDB):
 
         except:
             transaction.rollback()
-            raise
+            raise()
 
         transaction.commit()
 
@@ -242,7 +242,7 @@ class ReadDataFromExternalDBQueryById(ReadFromExternalDB):
 
         except:
             transaction.rollback()
-            raise
+            raise()
 
         transaction.commit()
 
@@ -404,7 +404,7 @@ from (
                                                     })
         except:
             transaction.rollback()
-            raise
+            raise()
 
         transaction.commit()
 
@@ -449,7 +449,7 @@ from (
                                                                  })
                 except:
                     transaction.rollback()
-                    raise
+                    raise()
 
                 transaction.commit()
 
@@ -473,7 +473,7 @@ class TransformIndicatorListToDict(ServerClientServerDataTransformation):
 
         except:
             transaction.rollback()
-            raise
+            raise()
 
         transaction.commit()
 
@@ -556,7 +556,7 @@ class MapDataWithDict(ServerClientServerDataTransformation):
                         i += 1
         except:
             transaction.rollback()
-            raise
+            raise()
 
         transaction.commit()
 
@@ -586,7 +586,7 @@ class TransformDataWithFunction(ServerClientServerDataTransformation):
                 self._write_data(data, row_obj.common_id, meta)
         except:
             transaction.rollback()
-            raise
+            raise()
 
         transaction.commit()
 
@@ -622,7 +622,7 @@ class ScoreData(ServerClientServerDataTransformation):
 
         except:
             transaction.rollback()
-            raise
+            raise()
 
         transaction.commit()
 
@@ -650,5 +650,5 @@ class WriteFile(ServerClientDataTransformation):
             with open(localized_file_name, "w") as fw:
                 json.dump(result_list, fw, sort_keys=True, indent=4, separators=(',', ': '))
         else:
-            raise RuntimeError
+            raise(RuntimeError)
 
