@@ -1,0 +1,11 @@
+{
+  "connection_uri": "postgresql+psycopg2://postgres@127.0.0.1:32768/postgres",
+  "db_schema": "testing",
+  "local_pipeline_import_path": {
+      "test custom pipeline": "./local_classes/",
+      "test loading from db": "./local_classes/"
+  },
+  "external_data_connections": {
+    "test_sqlite": {"connection_string": "sqlite:///./files/test.db3"}
+  }
+}
