@@ -131,7 +131,7 @@ def run_pipeline(pipeline_name, config_dict, with_transaction_rollback=False):
     else:
         external_data_connections = {}
 
-    jobs_obj = Jobs(job_name, connection, meta_data, root_file_path, external_data_connections=external_data_connections)
+    jobs_obj = Jobs(job_name, connection, meta_data, root_file_path, external_data_connections_dict=external_data_connections)
     jobs_obj.create_jobs_to_run(pipeline_name)
 
     jobs_obj.run_job(with_transaction_rollback)
