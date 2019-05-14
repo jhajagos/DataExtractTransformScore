@@ -556,7 +556,7 @@ class MapDataWithDict(ServerClientServerDataTransformation):
                         i += 1
         except:
             transaction.rollback()
-            raise()
+            raise RuntimeError("Transaction rolled back")
 
         transaction.commit()
 
