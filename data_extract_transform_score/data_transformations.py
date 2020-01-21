@@ -7,6 +7,16 @@ import models
 import json
 import os
 import sqlalchemy as sa
+import sys
+
+
+def open_csv_file(file_name, mode="r"):
+
+    ver_info = sys.version_info[0]
+    if ver_info == 2:
+        return open(file_name, mode=mode + "b")
+    else:
+        return open(file_name, newline="", mode=mode)
 
 
 class DataTransformation(object):
@@ -116,7 +126,7 @@ class ReadFileIntoDB(ClientServerDataTransformation):
             if self.file_type == "csv":
 
                 localized_file_name = os.path.abspath(os.path.join(self.file_directory, self.file_name))
-                with open(localized_file_name, "rb") as f:
+                with open_csv_file(localized_file_name, mode="r") as f:
                     csv_dict_reader = csv.DictReader(f)
                     i = 1
                     for row_dict in csv_dict_reader:
@@ -134,7 +144,7 @@ class ReadFileIntoDB(ClientServerDataTransformation):
 
         except:
             transaction.rollback()
-            raise()
+            raise(RuntimeError)
 
         transaction.commit()
 
