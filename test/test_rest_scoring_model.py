@@ -14,6 +14,7 @@ import os
 class TestRestModel(unittest.TestCase):
 
     def setUp(self):
+
         with open("testing_config.json", "r") as f:
             config = json.load(f)
 

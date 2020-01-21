@@ -150,7 +150,7 @@ class ReadFileIntoDB(ClientServerDataTransformation):
 
 
 class ReadFromExternalDB(ClientServerDataTransformation):
-    """Read data from an external datasource defined by an SQLAlchemy Connection String"""
+    """Read data from an external data source defined by an SQLAlchemy Connection String"""
 
     def _connect_to_database(self, data_connection_name):
 
@@ -173,7 +173,7 @@ class ReadFromExternalDB(ClientServerDataTransformation):
 
         for column in row_data.keys():
             data_value = row_data[column]
-            if data_value.__class__  in (int, float):
+            if data_value.__class__ in (int, float):
                 row_dict[column] = data_value
             else:
                 string_value = str(data_value)
@@ -218,8 +218,6 @@ class ReadDataFromExternalDBQuery(ReadFromExternalDB):
         transaction.commit()
 
 
-
-
 class ReadDataFromExternalDBQueryById(ReadFromExternalDB):
 
     def __init__(self, external_data_connection_name, sql_query, step_number):
@@ -255,7 +253,6 @@ class ReadDataFromExternalDBQueryById(ReadFromExternalDB):
             raise()
 
         transaction.commit()
-
 
 
 class FilterBy(ServerServerDataTransformation):

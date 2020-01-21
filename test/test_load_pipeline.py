@@ -7,7 +7,9 @@ import os
 
 
 class TestLoadPipeline(unittest.TestCase):
+
     def setUp(self):
+
         with open("testing_config.json", "r") as f:
             config = json.load(f)
 
@@ -99,7 +101,7 @@ class TestLoadPipeline(unittest.TestCase):
         num_dts_2 = len(list(self.connection.execute("select * from %s.data_transformations dts" % (self.meta_data.schema,))))
 
         self.assertTrue(num_dts_1 > 0)
-        self.assertEquals(0, num_dts_2)
+        self.assertEqual(0, num_dts_2)
 
         num_adts_2 = len(list(self.connection.execute("select * from %s.archived_data_transformations dts" % (self.meta_data.schema,))))
 
