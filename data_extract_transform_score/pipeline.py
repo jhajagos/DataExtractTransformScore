@@ -3,9 +3,22 @@ Classes for creating and running pipelines against a Postgresql database schema 
 in schema_define.py
 """
 
-import data_transformations as dt
+import sys
+import os
+
+
+try:
+    from data_transformations import *
+except ImportError:
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.split(__file__)[0])))
+    from .data_transformations import *
+
 import datetime
-from db_classes import *
+
+try:
+    from db_classes import *
+except ImportError:
+    from .db_classes import *
 
 
 class DataTransformationStepClasses(object):
@@ -14,18 +27,18 @@ class DataTransformationStepClasses(object):
     def __init__(self):
         self.step_class_callable_obj_dict = {}
 
-        self._register("Load file", dt.ReadFileIntoDB)
-        self._register("Coalesce", dt.CoalesceData)
-        self._register("Merge", dt.MergeData)
-        self._register("Map with Dict", dt.MapDataWithDict)
-        self._register("Score", dt.ScoreData)
-        self._register("Write file", dt.WriteFile)
-        self._register("Transform with function", dt.TransformDataWithFunction)
-        self._register("Filter by", dt.FilterBy)
-        self._register("Swap metadata to data", dt.SwapMetaToData)
-        self._register("Transform indicator list to dict", dt.TransformIndicatorListToDict)
-        self._register("Load from DB by query", dt.ReadDataFromExternalDBQuery)
-        self._register("Load from DB by id", dt.ReadDataFromExternalDBQueryById)
+        self._register("Load file", ReadFileIntoDB)
+        self._register("Coalesce", CoalesceData)
+        self._register("Merge", MergeData)
+        self._register("Map with Dict", MapDataWithDict)
+        self._register("Score", ScoreData)
+        self._register("Write file", WriteFile)
+        self._register("Transform with function", TransformDataWithFunction)
+        self._register("Filter by", FilterBy)
+        self._register("Swap metadata to data", SwapMetaToData)
+        self._register("Transform indicator list to dict", TransformIndicatorListToDict)
+        self._register("Load from DB by query", ReadDataFromExternalDBQuery)
+        self._register("Load from DB by id", ReadDataFromExternalDBQueryById)
 
     def _register(self, data_transformation_step_class_name, class_obj):
         self.step_class_callable_obj_dict[data_transformation_step_class_name] = class_obj
