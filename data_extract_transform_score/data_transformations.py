@@ -586,7 +586,7 @@ class TransformDataWithFunction(ServerClientServerDataTransformation):
                 self._write_data(data, row_obj.common_id, meta)
         except:
             transaction.rollback()
-            raise()
+            raise
 
         transaction.commit()
 
