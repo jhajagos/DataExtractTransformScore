@@ -18,7 +18,6 @@ from data_extract_transform_score.pipeline import Pipeline, Jobs
 
 """
 Command line program for creating, managing, and running pipelines jobs.
-
 """
 
 
@@ -214,6 +213,7 @@ def main():
 
         else:
             raise(RuntimeError, "Pipeline name must be provided")
+
 
 if __name__ == "__main__":
     main()
