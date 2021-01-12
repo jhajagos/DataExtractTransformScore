@@ -25,7 +25,8 @@ def get_db_connection(config_dict, reflect_db=True):
     """Connect to the PostgreSQL database"""
     engine = sa.create_engine(config_dict["connection_uri"])
     connection = engine.connect()
-    meta_data = sa.MetaData(connection, schema=config_dict["db_schema"], reflect=reflect_db)
+    meta_data = sa.MetaData(connection, schema=config_dict["db_schema"])
+    meta_data.reflect()
 
     return connection, meta_data
 
