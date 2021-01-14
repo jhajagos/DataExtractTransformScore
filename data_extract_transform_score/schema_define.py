@@ -7,7 +7,7 @@ def schema_define(meta_data):
 
     job_statuses = Table("job_statuses", meta_data,
                          Column("id", Integer, primary_key=True),
-                         Column("name", String(255), nullable=False, unique=True))
+                         Column("name", String(255), nullable=False, unique=True), extend_existing=True)
 
     jobs = Table("jobs", meta_data,
                  Column("id", Integer, primary_key=True),
@@ -16,17 +16,21 @@ def schema_define(meta_data):
                  Column("end_date_time", DateTime),
                  Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False),
                  Column("is_latest", Boolean),
-                 Column("is_active", Boolean))
+                 Column("is_active", Boolean), extend_existing=True)
 
     data_transformation_step_classes = Table("data_transformation_step_classes", meta_data,
                                              Column("id", Integer, primary_key=True),
                                              Column("name", String(255), nullable=False, unique=True),
                                              Column("parent_data_transformation_step_class_id",
-                                                    ForeignKey("data_transformation_step_classes.id"), nullable=True))
+                                              ForeignKey("data_transformation_step_classes.id"), nullable=True),
+                                             extend_existing=True
+                                             )
 
     pipelines = Table("pipelines", meta_data,
                       Column("id", Integer, primary_key=True),
-                      Column("name", String(255), nullable=False, unique=True))
+                      Column("name", String(255), nullable=False, unique=True),
+                      extend_existing=True
+                      )
 
     pipeline_jobs = Table("pipeline_jobs", meta_data,
                           Column("id", Integer, primary_key=True),
@@ -37,7 +41,9 @@ def schema_define(meta_data):
                           Column("job_status_id", ForeignKey("job_statuses.id"), nullable=False),
                           Column("start_date_time", DateTime),
                           Column("end_date_time", DateTime),
-                          Column("is_active", Boolean))
+                          Column("is_active", Boolean),
+                          extend_existing=True
+                          )
 
     data_transformation_steps = Table("data_transformation_steps", meta_data,
                                       Column("id", Integer, primary_key=True),
@@ -48,7 +54,8 @@ def schema_define(meta_data):
                                       Column("parameters", JSONB),
                                       Column("description", Text),
                                       Column("pipeline_id", ForeignKey("pipelines.id"), nullable=False),
-                                      UniqueConstraint('pipeline_id', "step_number", "name", name='idx_dts_pn')
+                                      UniqueConstraint('pipeline_id', "step_number", "name", name='idx_dts_pn'),
+                                      extend_existing=True
                                       )
 
     pipeline_jobs_data_transformation_steps = Table("pipeline_jobs_data_transformation_steps", meta_data,
@@ -60,7 +67,8 @@ def schema_define(meta_data):
                                                  Column("end_date_time", DateTime),
                                                  Column("is_active", Boolean),
                                                  Column("data_transformations_archived", Boolean, default=False),
-                                                 Column("data_transformations_deleted", Boolean, default=False)
+                                                 Column("data_transformations_deleted", Boolean, default=False),
+                                                 extend_existing=True
                                                 )
 
     data_transformations = Table("data_transformations", meta_data,
@@ -69,7 +77,8 @@ def schema_define(meta_data):
                                  Column("meta", JSONB),
                                  Column("common_id", String(255), index=True),
                                  Column("pipeline_job_data_transformation_step_id", ForeignKey("pipeline_jobs_data_transformation_steps.id"), nullable=False),
-                                 Column("created_at", DateTime)
+                                 Column("created_at", DateTime),
+                                 extend_existing=True
                                  )
 
     archived_data_transformations = Table("archived_data_transformations", meta_data,
@@ -79,7 +88,8 @@ def schema_define(meta_data):
                                  Column("common_id", String(255), index=True),
                                  Column("pipeline_job_data_transformation_step_id", ForeignKey("pipeline_jobs_data_transformation_steps.id"), nullable=False),
                                  Column("created_at", DateTime),
-                                 Column("archived_at", DateTime)
+                                 Column("archived_at", DateTime),
+                                 extend_existing=True
                                  )
 
     return meta_data
@@ -104,11 +114,13 @@ def populate_reference_table(table_name, connection, meta, list_of_values):
 
 
 def create_and_populate_schema(connection, meta_data, drop_all=True):
-
-    meta_data = schema_define(meta_data)
-
+    schema_name = meta_data.schema
     if drop_all:
+        meta_data.reflect()
         meta_data.drop_all()
+
+    meta_data = MetaData(connection, schema=schema_name)
+    meta_data = schema_define(meta_data)
 
     meta_data.create_all(checkfirst=True)
 
@@ -117,7 +129,7 @@ def create_and_populate_schema(connection, meta_data, drop_all=True):
     populate_reference_table(table_dict["job_statuses"], connection, meta_data, job_statuses)
 
     primary_data_transform_classes = [
-                                      (1,"Load", None),
+                                      (1, "Load", None),
                                       (2, "Merge", None),
                                       (3, "Coalesce"),
                                       (4, "Transform", None),
