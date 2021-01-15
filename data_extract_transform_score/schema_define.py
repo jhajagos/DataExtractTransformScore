@@ -152,7 +152,7 @@ def create_and_populate_schema(connection, meta_data, drop_all=True):
 
     data_transform_classes = primary_data_transform_classes + child_data_transform_child_classes_1 + child_data_transform_child_classes_2
 
-    populate_reference_table(table_dict["data_transformation_step_classes"],connection,  meta_data, data_transform_classes)
+    populate_reference_table(table_dict["data_transformation_step_classes"], connection,  meta_data, data_transform_classes)
 
     return meta_data, table_dict
 
